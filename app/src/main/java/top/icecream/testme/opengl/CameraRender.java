@@ -5,9 +5,12 @@ import android.content.Context;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.media.FaceDetector;
 import android.opengl.GLES11Ext;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
+
+import com.iflytek.cloud.FaceDetector;
+import com.iflytek.cloud.SpeechUtility;
 
 import java.io.IOException;
 
@@ -51,8 +54,8 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     public CameraRender(Context context) {
         this.context = context;
         glSV = (GLSurfaceView) ((Activity) context).findViewById(R.id.glSV);
-        /*SpeechUtility.createUtility(context, "appid=5903347f");
-        mFaceDetector = FaceDetector.createDetector(context, null);*/
+        SpeechUtility.createUtility(context, "appid=5903347f");
+        mFaceDetector = FaceDetector.createDetector(context, null);
     }
 
     @Override
@@ -87,7 +90,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
             }
         });
 
-        /*new Thread(){
+        new Thread(){
             @Override
             public void run() {
                 while (true) {
@@ -102,7 +105,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
                     }
                 }
             }
-        }.start();*/
+        }.start();
         try {
             camera.setPreviewTexture(cameraTexture);
         } catch (IOException e) {
