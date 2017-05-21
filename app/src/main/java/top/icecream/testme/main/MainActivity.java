@@ -15,7 +15,7 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import top.icecream.testme.R;
 import top.icecream.testme.info.AboutActivity;
-import top.icecream.testme.opengl.CameraFilterRender;
+import top.icecream.testme.opengl.CameraRender;
 import top.icecream.testme.main.utils.AnimatorHelper;
 import top.icecream.testme.main.utils.PermissionHelper;
 
@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initCameraRender() {
         glSV.setEGLContextClientVersion(2);
-        glSV.setRenderer(new CameraFilterRender(this));
+        glSV.setRenderer(new CameraRender(this));
         glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         isRender = true;
     }

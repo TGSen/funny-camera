@@ -9,7 +9,7 @@ import static top.icecream.testme.opengl.Constans.BYTES_PER_FLOAT;
  * DATE: 5/4/2017
  */
 
-public class Photo {
+public class Image {
 
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
@@ -30,21 +30,21 @@ public class Photo {
 
 
 
-    public Photo() {
+    public Image() {
         vertexArray = new VertexArray(shapeCoords);
     }
 
-    public void bindData(GrayFilterRender grayFilterRender){
+    public void bindData(filterRender filterRender){
         vertexArray.setVertexAttribPointer(
                 0,
-                grayFilterRender.getPositionAttributeLocation(),
+                filterRender.getPositionAttributeLocation(),
                 POSITION_COMPONENT_COUNT,
                 STRIDE
         );
 
         vertexArray.setVertexAttribPointer(
                 POSITION_COMPONENT_COUNT,
-                grayFilterRender.getTextureCoordinatesAttributeLocation(),
+                filterRender.getTextureCoordinatesAttributeLocation(),
                 TEXTURE_COORDINATES_COMPONENT_COUNT,
                 STRIDE
         );

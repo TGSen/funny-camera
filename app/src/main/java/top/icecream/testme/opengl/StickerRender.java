@@ -1,48 +1,50 @@
 package top.icecream.testme.opengl;
 
 import android.content.Context;
-import android.opengl.GLES20;
 
 import top.icecream.testme.R;
 
-import static android.opengl.GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
 import static android.opengl.GLES20.GL_TEXTURE0;
+import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
-import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES20.glUniform1i;
+import static android.opengl.GLES20.glUniformMatrix4fv;
 
 /**
  * AUTHOR: 86417
- * DATE: 5/9/2017
+ * DATE: 5/3/2017
  */
 
-public class OriFilterRender extends CameraShaderProgram {
+public class StickerRender extends Shader {
 
+    private final int uMatrixLocation;
     private final int uTextureUnitLocation;
 
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
 
-    protected OriFilterRender(Context context) {
-        super(context, R.raw.vertex_shader_ori, R.raw.fragment_shader_ori);
+    private static final String U_POSITION_COORDINATES = "u_PositionCoordinates";
+    private final int uPositionCoordinates;
+
+    protected StickerRender(Context context) {
+        super(context, R.raw.sticker_vertex_shader,R.raw.sticker_fragment_shader);
+
+        uMatrixLocation = glGetUniformLocation(program, U_MATRIX);
         uTextureUnitLocation = glGetUniformLocation(program, U_TEXTURE_UNIT);
+
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
+
+        uPositionCoordinates = glGetUniformLocation(program, U_POSITION_COORDINATES);
     }
 
-    public void bindTexture(int textureId) {
+    public void setUniforms(float[] matrix, int textureId) {
+        glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_EXTERNAL_OES, textureId);
-
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-
+        glBindTexture(GL_TEXTURE_2D, textureId);
         glUniform1i(uTextureUnitLocation, 0);
     }
 
@@ -52,5 +54,9 @@ public class OriFilterRender extends CameraShaderProgram {
 
     public int getTextureCoordinatesAttributeLocation() {
         return aTextureCoordinatesLocation;
+    }
+
+    public int getPositionCoordinates(){
+        return uPositionCoordinates;
     }
 }

@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
  * DATE: 5/3/2017
  */
 
-public class ResourceReader {
+public class ResourceHelper {
 
     public static String readFile(Context context, int resourceId){
         StringBuilder builder = new StringBuilder();

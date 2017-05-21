@@ -10,7 +10,7 @@ import static top.icecream.testme.opengl.Constans.BYTES_PER_FLOAT;
  * DATE: 5/3/2017
  */
 
-public class Table {
+public class Sticker {
     private static final int POSITION_COMPONENT_COUNT = 2;
     private static final int TEXTURE_COORDINATES_COMPONENT_COUNT = 2;
     private static final int STRIDE = (POSITION_COMPONENT_COUNT + TEXTURE_COORDINATES_COMPONENT_COUNT) * BYTES_PER_FLOAT;
@@ -28,28 +28,28 @@ public class Table {
             -0.2f, -0.2f, 0f, 1f
     };
 
-    public Table() {
+    public Sticker() {
         vertexArray = new VertexArray(VERTEX_DATA);
     }
 
-    public void bindData(TextureShaderProgram textureShaderProgram){
+    public void bindData(StickerRender stickerRender){
         vertexArray.setVertexAttribPointer(
                 0,
-                textureShaderProgram.getPositionAttributeLocation(),
+                stickerRender.getPositionAttributeLocation(),
                 POSITION_COMPONENT_COUNT,
                 STRIDE
         );
 
         vertexArray.setVertexAttribPointer(
                 POSITION_COMPONENT_COUNT,
-                textureShaderProgram.getTextureCoordinatesAttributeLocation(),
+                stickerRender.getTextureCoordinatesAttributeLocation(),
                 TEXTURE_COORDINATES_COMPONENT_COUNT,
                 STRIDE
         );
     }
 
-    public void setCoor(TextureShaderProgram textureShaderProgram, float x, float y){
-        int uniformLocation = textureShaderProgram.getDeletaxyCoordinates();
+    public void setPosition(StickerRender stickerRender, float x, float y){
+        int uniformLocation = stickerRender.getPositionCoordinates();
         glUniform2f(uniformLocation, x, y);
     }
 

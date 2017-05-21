@@ -20,16 +20,16 @@ import static android.opengl.GLES20.glUniform1i;
  * DATE: 5/4/2017
  */
 
-public class GrayFilterRender extends CameraShaderProgram{
+public class filterRender extends Shader{
 
     private final int uTextureUnitLocation;
 
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
 
-    protected GrayFilterRender(Context context) {
-        super(context, R.raw.vertex_shader_ori, R.raw.fragment_shader_ori);
-        uTextureUnitLocation = glGetUniformLocation(program, U_TEXTURE_UNIT);
+    protected filterRender(Context context) {
+        super(context, R.raw.filter_vertex_shader_ori, R.raw.filter_fragment_shader_ori);
+        uTextureUnitLocation = glGetUniformLocation(program, S_TEXTURE);
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
     }
