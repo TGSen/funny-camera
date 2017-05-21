@@ -1,18 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="top.icecream.testme.MainActivity">
+    tools:context="top.icecream.testme.main.MainActivity"
+    android:keepScreenOn="true">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glSV"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/albumBtn"
+        android:layout_width="@dimen/ico_side"
+        android:layout_height="@dimen/ico_side"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_album" />
+
+    <Button
+        android:id="@+id/changeCameraBtn"
+        android:layout_width="@dimen/ico_side"
+        android:layout_height="@dimen/ico_side"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_autorenew"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/infoBtn"
+        android:layout_width="@dimen/ico_side"
+        android:layout_height="@dimen/ico_side"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_info"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:id="@+id/stickBtn"
+        android:layout_width="@dimen/ico_side"
+        android:layout_height="@dimen/ico_side"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_sentiment"
+        android:layout_alignParentBottom="true" />
+
+    <Button
+        android:id="@+id/takePictureBtn"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_ring"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:id="@+id/filterBtn"
+        android:layout_width="@dimen/ico_side"
+        android:layout_height="@dimen/ico_side"
+        android:layout_margin="10dp"
+        android:background="@drawable/ic_blur"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true" />
+
+    <android.support.v7.widget.RecyclerView
+        android:visibility="invisible"
+        android:id="@+id/filterRV"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_alignParentBottom="true"/>
 
-</android.support.constraint.ConstraintLayout>
+    <android.support.v7.widget.RecyclerView
+        android:visibility="invisible"
+        android:id="@+id/stickRV"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>

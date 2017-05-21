@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string-array name="filter">
+        <item>Original</item>
+        <item>EdgeDectection</item>
+        <item>Pixelize</item>
+        <item>EMInterference</item>
+        <item>TrianglesMosaic</item>
+        <item>Legofied</item>
+        <item>TileMosaic</item>
+        <item>Blueorange</item>
+        <item>ChromaticAberration</item>
+        <item>BasicDeform</item>
+        <item>Contrast</item>
+        <item>NoiseWarp</item>
+        <item>Refraction</item>
+        <item>Mapping</item>
+        <item>Crosshatch</item>
+        <item>LichtensteinEsque</item>
+        <item>AsciiArt</item>
+        <item>MoneyFilter</item>
+        <item>Cracked</item>
+        <item>Polygonization</item>
+        <item>JFAVoronoi</item>
+    </string-array>
+</resources>
