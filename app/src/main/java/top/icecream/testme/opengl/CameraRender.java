@@ -63,6 +63,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         filterRenderList.add(new ReliefFilterRender(context));
         filterRenderList.add(new MosaicFilterRender(context));
 
+        stickerList.add(0);
         stickerList.add(TextureHelper.loadTexture(context, R.raw.glasses));
         stickerList.add(TextureHelper.loadTexture(context, R.raw.mustache));
         stickerList.add(TextureHelper.loadTexture(context, R.raw.nose));
@@ -107,10 +108,12 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         texture.bindData(filterRender);
         texture.draw();
 
-        stickerRender.useProgram();
-        stickerRender.setUniforms(projectionMatrix, stickerId);
-        texture.bindData(stickerRender);
-        texture.draw();
+        if (stickerId != 0) {
+            stickerRender.useProgram();
+            stickerRender.setUniforms(projectionMatrix, stickerId);
+            texture.bindData(stickerRender);
+            texture.draw();
+        }
 
         cameraTexture.updateTexImage();
     }
