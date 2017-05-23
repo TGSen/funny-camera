@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
 
     @BindView(R.id.glSV) GLSurfaceView glSV;
     private boolean isRender = false;
+    private CameraRender cameraRender;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,8 +42,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         initButton();
-        initList();
         initCamera();
+        initList();
     }
 
     private void initButton() {
@@ -50,15 +51,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initList() {
-        GridLayoutManager filterGridLayoutManager = new GridLayoutManager(this, 3);
+        GridLayoutManager filterGridLayoutManager = new GridLayoutManager(this, 1);
         filterGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
         filterRV.setLayoutManager(filterGridLayoutManager);
-        filterRV.setAdapter(new FilterListAdapter(this));
+        filterRV.setAdapter(new FilterListAdapter(this, cameraRender));
 
-        GridLayoutManager stickerGridLayoutManager = new GridLayoutManager(this, 3);
+        GridLayoutManager stickerGridLayoutManager = new GridLayoutManager(this, 1);
         stickerGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
         stickerRV.setLayoutManager(stickerGridLayoutManager);
-        stickerRV.setAdapter(new StickerListAdapter(this));
+        stickerRV.setAdapter(new StickerListAdapter(this, cameraRender));
     }
 
     private void initCamera() {
@@ -71,12 +72,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void initCameraRender() {
         glSV.setEGLContextClientVersion(2);
-        glSV.setRenderer(new CameraRender(this));
+        cameraRender = new CameraRender(this, glSV);
+        glSV.setRenderer(cameraRender);
         glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
         isRender = true;
     }
 
     @OnClick(R.id.albumBtn) void openAlbum(){
+    }
+
+    @OnClick(R.id.changeCameraBtn) void changeCamera() {
+        cameraRender.changCamera();
     }
 
     @OnClick(R.id.infoBtn) void openInfo(){

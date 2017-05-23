@@ -24,6 +24,8 @@ public class Shader {
 
     protected final int program;
 
+    protected float[] coordinates;
+
     protected Shader(Context context, int vertexShaderResourceId, int fragmentShaderResourceId) {
         program = ShaderHelper.buildProgram(
                 ResourceHelper.readFile(context, vertexShaderResourceId),
@@ -33,5 +35,8 @@ public class Shader {
 
     public void useProgram() {
         glUseProgram(program);
+    }
+    public float[] getCoordinates() {
+        return coordinates;
     }
 }

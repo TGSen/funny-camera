@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import top.icecream.testme.R;
+import top.icecream.testme.opengl.CameraRender;
 
 
 /**
@@ -20,19 +21,21 @@ import top.icecream.testme.R;
 
 public class FilterListAdapter extends RecyclerView.Adapter<FilterListAdapter.ViewHolder> implements View.OnClickListener {
 
+    private final CameraRender cameraRender;
     private Context context;
     private List<String> filters;
 
-    public FilterListAdapter(Context context) {
+    public FilterListAdapter(Context context, CameraRender cameraRender) {
         super();
         this.context = context;
+        this.cameraRender = cameraRender;
         String[] filtersArr = context.getResources().getStringArray(R.array.filter);
         filters = Arrays.asList(filtersArr);
     }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(context).inflate(R.layout.item_filter_list, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.item_list, parent, false);
         view.setOnClickListener(this);
         return new ViewHolder(view);
     }
@@ -50,6 +53,8 @@ public class FilterListAdapter extends RecyclerView.Adapter<FilterListAdapter.Vi
 
     @Override
     public void onClick(View v) {
+        int position = (int) v.getTag();
+        cameraRender.selectFilter(position);
     }
 
     class ViewHolder extends RecyclerView.ViewHolder{

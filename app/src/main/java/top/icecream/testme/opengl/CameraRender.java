@@ -1,23 +1,24 @@
 package top.icecream.testme.opengl;
 
-import android.app.Activity;
 import android.content.Context;
-import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.GLES11Ext;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
 
-import com.iflytek.cloud.FaceDetector;
-import com.iflytek.cloud.SpeechUtility;
-
-import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import top.icecream.testme.R;
+import top.icecream.testme.camera.Camera;
+import top.icecream.testme.opengl.filter.FilterRender;
+import top.icecream.testme.opengl.filter.GrayFilterRender;
+import top.icecream.testme.opengl.filter.MosaicFilterRender;
+import top.icecream.testme.opengl.filter.OriginalFilterRender;
+import top.icecream.testme.opengl.filter.ReliefFilterRender;
+import top.icecream.testme.opengl.sticker.StickerRender;
 import top.icecream.testme.opengl.utils.TextureHelper;
 
 import static android.opengl.GLES20.GL_COLOR_BUFFER_BIT;
@@ -38,80 +39,49 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private final Context context;
     private int imageId;
     private int stickerId;
-    private Image image;
-    private filterRender filterRender;
+    private Texture texture;
+    private FilterRender filterRender;
+    private StickerRender stickerRender;
     private SurfaceTexture cameraTexture;
     private GLSurfaceView glSV;
+    private List<FilterRender> filterRenderList = new LinkedList<>();
+    private List<Integer> stickerList = new LinkedList<>();
 
-    private Sticker sticker;
-    private StickerRender stickerRender;
     private final float[] projectionMatrix = new float[16];
+    private Camera camera;
 
-    private static final int PREVIEW_WIDTH = 640;
-    private static final int PREVIEW_HEIGHT = 480;
-    private FaceDetector mFaceDetector;
-
-    public CameraRender(Context context) {
+    public CameraRender(Context context, GLSurfaceView glSV) {
         this.context = context;
-        glSV = (GLSurfaceView) ((Activity) context).findViewById(R.id.glSV);
-        SpeechUtility.createUtility(context, "appid=5903347f");
-        mFaceDetector = FaceDetector.createDetector(context, null);
+        this.glSV = glSV;
     }
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+
+        filterRenderList.add(new OriginalFilterRender(context));
+        filterRenderList.add(new GrayFilterRender(context));
+        filterRenderList.add(new ReliefFilterRender(context));
+        filterRenderList.add(new MosaicFilterRender(context));
+
+        stickerList.add(TextureHelper.loadTexture(context, R.raw.glasses));
+        stickerList.add(TextureHelper.loadTexture(context, R.raw.mustache));
+        stickerList.add(TextureHelper.loadTexture(context, R.raw.nose));
+
+
         glClearColor(0f,0f,0f,1f);
 
-        sticker = new Sticker();
+        texture = new Texture();
         stickerRender = new StickerRender(context);
-        stickerId = TextureHelper.loadTexture(context, R.raw.hat);
-
-        image = new Image();
-        filterRender = new filterRender(context);
+        filterRender = filterRenderList.get(0);
+        stickerId = stickerList.get(0);
         imageId = TextureHelper.genTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-
 
         cameraTexture = new SurfaceTexture(imageId);
         cameraTexture.setOnFrameAvailableListener(this);
 
-        final byte[] previewBuffer = new byte[460800];
-        Camera camera = Camera.open(1);
-        camera.addCallbackBuffer(previewBuffer);
-        Camera.Parameters params = camera.getParameters();
-        params.setPreviewFormat(ImageFormat.NV21);
-        params.setPreviewSize(PREVIEW_WIDTH, PREVIEW_HEIGHT);
-        camera.setParameters(params);
-        camera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
-            @Override
-            public void onPreviewFrame(byte[] data, Camera camera) {
-                synchronized (previewBuffer) {
-                    camera.addCallbackBuffer(previewBuffer);
-                }
-            }
-        });
-
-        new Thread(){
-            @Override
-            public void run() {
-                while (true) {
-                    synchronized (previewBuffer){
-                        String result = mFaceDetector.trackNV21(previewBuffer, PREVIEW_WIDTH, PREVIEW_HEIGHT, 1, 3);
-                        Log.d(TAG, "result:"+result);
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-        try {
-            camera.setPreviewTexture(cameraTexture);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        camera.startPreview();
+        camera = new Camera(context);
+        camera.setSurfaceTexture(cameraTexture);
+        camera.openCamera();
     }
 
     @Override
@@ -134,14 +104,13 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
         filterRender.useProgram();
         filterRender.bindTexture(imageId);
-        image.bindData(filterRender);
-        image.draw();
+        texture.bindData(filterRender);
+        texture.draw();
 
         stickerRender.useProgram();
         stickerRender.setUniforms(projectionMatrix, stickerId);
-        sticker.bindData(stickerRender);
-        /*sticker.setCoor(stickerRender, deltX, deltY);*/
-        sticker.draw();
+        texture.bindData(stickerRender);
+        texture.draw();
 
         cameraTexture.updateTexImage();
     }
@@ -149,5 +118,17 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
         glSV.requestRender();
+    }
+
+    public void changCamera() {
+        camera.changeCamera();
+    }
+
+    public void selectFilter(int position) {
+        filterRender = filterRenderList.get(position);
+    }
+
+    public void selectSticker(int position) {
+        stickerId = stickerList.get(position);
     }
 }

@@ -7,7 +7,7 @@ import java.nio.FloatBuffer;
 import static android.opengl.GLES20.GL_FLOAT;
 import static android.opengl.GLES20.glEnableVertexAttribArray;
 import static android.opengl.GLES20.glVertexAttribPointer;
-import static top.icecream.testme.opengl.Constans.BYTES_PER_FLOAT;
+import static top.icecream.testme.opengl.Constant.BYTES_PER_FLOAT;
 
 /**
  * AUTHOR: 86417
@@ -25,7 +25,7 @@ public class VertexArray {
                 .put(vertexData);
     }
 
-    public void setVertexAttribPointer(int dataOffset, int attributeLocation, int componentCount, int stride){
+    public void setVertexAttributePointer(int dataOffset, int attributeLocation, int componentCount, int stride){
         floatBuffer.position(dataOffset);
         glVertexAttribPointer(attributeLocation, componentCount, GL_FLOAT, false, stride, floatBuffer);
         glEnableVertexAttribArray(attributeLocation);
