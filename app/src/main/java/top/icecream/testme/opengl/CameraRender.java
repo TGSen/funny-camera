@@ -13,9 +13,10 @@ import javax.microedition.khronos.opengles.GL10;
 
 import top.icecream.testme.R;
 import top.icecream.testme.camera.Camera;
+import top.icecream.testme.opengl.filter.LineFilterRender;
 import top.icecream.testme.opengl.filter.FilterRender;
 import top.icecream.testme.opengl.filter.GrayFilterRender;
-import top.icecream.testme.opengl.filter.MosaicFilterRender;
+import top.icecream.testme.opengl.filter.AsciiFilterRender;
 import top.icecream.testme.opengl.filter.OriginalFilterRender;
 import top.icecream.testme.opengl.filter.ReliefFilterRender;
 import top.icecream.testme.opengl.sticker.StickerRender;
@@ -61,7 +62,8 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         filterRenderList.add(new OriginalFilterRender(context));
         filterRenderList.add(new GrayFilterRender(context));
         filterRenderList.add(new ReliefFilterRender(context));
-        filterRenderList.add(new MosaicFilterRender(context));
+        filterRenderList.add(new AsciiFilterRender(context));
+        filterRenderList.add(new LineFilterRender(context));
 
         stickerList.add(0);
         stickerList.add(TextureHelper.loadTexture(context, R.raw.glasses));

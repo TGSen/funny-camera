@@ -5,7 +5,8 @@
         <item>原始</item>
         <item>灰阶</item>
         <item>浮雕</item>
-        <item>马赛克</item>
+        <item>字符</item>
+        <item>线条</item>
     </string-array>
     <string-array name="sticker">
         <item>无</item>
