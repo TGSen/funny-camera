@@ -1,8 +1,6 @@
 package top.icecream.testme.camera;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -18,7 +16,6 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -44,7 +41,7 @@ public class Camera {
     private Context context;
     private Handler handler;
 
-    private int cameraId = 1;
+    private int cameraId = 0;
     private CameraDevice cameraDevice;
     private CaptureRequest.Builder requestBuilder;
 
@@ -76,20 +73,14 @@ public class Camera {
         this.surfaceTexture = surfaceTexture;
     }
 
+    @SuppressWarnings("MissingPermission")
     public void openCamera() {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
         try {
             CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             CameraCharacteristics c = cameraManager.getCameraCharacteristics(cameraId + "");
             StreamConfigurationMap map = c.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size[] sizes = map.getOutputSizes(SurfaceHolder.class);
-            previewSize = sizes[0];
-
+            previewSize = sizes[2];
             cameraManager.openCamera("" + cameraId, cameraStateCallback, handler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -233,7 +224,7 @@ public class Camera {
 
         public void setData(byte[] data) {
             synchronized (lock) {
-                this.data = Arrays.copyOf(data, data.length);
+                this.data = data;
             }
         }
 
