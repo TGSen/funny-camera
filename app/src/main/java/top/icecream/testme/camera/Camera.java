@@ -31,6 +31,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
+import static android.content.ContentValues.TAG;
+
 /**
  * AUTHOR: 86417
  * DATE: 4/22/2017
@@ -41,11 +43,13 @@ public class Camera {
     private Context context;
     private Handler handler;
 
-    private int cameraId = 0;
+    private int cameraId = 1;
     private CameraDevice cameraDevice;
     private CaptureRequest.Builder requestBuilder;
 
     private Size previewSize;
+    private static final int WIDTH = 1280;
+    private static final int HEIGHT = 720;
 
     private SurfaceTexture surfaceTexture;
     private FaceDetector detector;
@@ -80,7 +84,10 @@ public class Camera {
             CameraCharacteristics c = cameraManager.getCameraCharacteristics(cameraId + "");
             StreamConfigurationMap map = c.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size[] sizes = map.getOutputSizes(SurfaceHolder.class);
-            previewSize = sizes[2];
+            for (Size size : sizes) {
+                Log.d(TAG, "openCamera: size" + size.toString());
+            }
+            previewSize = new Size(WIDTH, HEIGHT);
             cameraManager.openCamera("" + cameraId, cameraStateCallback, handler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -200,17 +207,26 @@ public class Camera {
                     continue;
                 }
 
-                Frame outputFrame = null;
-                byte[] yuv = null;
+                int rotation;
+                if (cameraId == 0) {
+                    rotation = Frame.ROTATION_90;
+                } else {
+                    rotation = Frame.ROTATION_270;
+                }
+
+                Frame outputFrame;
+                byte[] yuv;
                 synchronized (lock) {
-                    yuv = quarterNV21(data, previewSize.getWidth(), previewSize.getHeight());
+                    yuv = data;
                 }
                 outputFrame = new Frame.Builder()
-                        .setImageData(ByteBuffer.wrap(yuv), previewSize.getWidth()/4,
-                                previewSize.getHeight()/4, ImageFormat.NV21)
+                        .setImageData(ByteBuffer.wrap(yuv), previewSize.getWidth(),
+                                previewSize.getHeight(), ImageFormat.NV21)
+                        .setRotation(rotation)
                         .build();
 
                 SparseArray<Face> faces = detector.detect(outputFrame);
+                Log.d(TAG, "run: face num" + faces.size());
                 for (int i = 0; i < faces.size(); i++) {
                     Face face = faces.valueAt(i);
                     List<Landmark> landmarks = face.getLandmarks();
@@ -218,7 +234,6 @@ public class Camera {
                         Log.d("logFaceData: ", "type + "+landmark.getType() +":"+ landmark.getPosition().toString());
                     }
                 }
-
             }
         }
 
@@ -231,19 +246,6 @@ public class Camera {
         private void setRunning(boolean isRunning) {
             this.isRunning = isRunning;
         }
-
-        private byte[] quarterNV21(byte[] data, int iWidth, int iHeight) {
-            byte[] yuv = new byte[iWidth/4 * iHeight/4 * 3 / 2];
-            int i = 0;
-            for (int y = 0; y < iHeight; y+=4) {
-                for (int x = 0; x < iWidth; x+=4) {
-                    yuv[i] = data[y * iWidth + x];
-                    i++;
-                }
-            }
-            return yuv;
-        }
-
     }
 
 

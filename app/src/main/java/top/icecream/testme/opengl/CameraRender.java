@@ -127,6 +127,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     public void changCamera() {
         camera.changeCamera();
+        filterRender.changeCameraDirection();
     }
 
     public void selectFilter(int position) {
