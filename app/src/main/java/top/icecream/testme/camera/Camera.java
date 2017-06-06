@@ -186,7 +186,7 @@ public class Camera {
             while (isRunning) {
 
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(35);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

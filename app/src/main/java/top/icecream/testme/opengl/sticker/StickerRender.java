@@ -59,11 +59,11 @@ public class StickerRender extends Shader {
                 //order of coordinate:X,Y,S,T
                 //Triangle fan
                 center[0], center[1], 0.5f, 0.5f,
-                center[0] - radius, center[1] - radius, 0f, 0f,
-                center[0] + radius, center[1] - radius, 1f, 0f,
-                center[0] + radius, center[1] + radius, 1f, 1f,
-                center[0] - radius, center[1] + radius, 0f, 1f,
-                center[0] - radius, center[1] - radius, 0f, 0f
+                center[0] - radius, center[1] - radius, 0f, 1f,
+                center[0] + radius, center[1] - radius, 1f, 1f,
+                center[0] + radius, center[1] + radius, 1f, 0f,
+                center[0] - radius, center[1] + radius, 0f, 0f,
+                center[0] - radius, center[1] - radius, 0f, 1f
         };
     }
 }

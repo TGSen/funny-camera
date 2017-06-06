@@ -33,6 +33,7 @@ import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.orthoM;
+import static top.icecream.testme.camera.Camera.RAW_HEIGHT;
 import static top.icecream.testme.camera.Camera.RAW_WIDTH;
 
 /**
@@ -145,10 +146,11 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
                 }
             }
             if (leftEye != null && rightEye != null) {
-                Log.d(TAG, String.format("left point:%s,right point:%s",leftEye.toString(), rightEye.toString()));
+
                 center = new PointF((leftEye.x + rightEye.x) / 2, (leftEye.y + rightEye.y) / 2);
                 PointF realCenter = rawPointToRealPoint(center);
-                stickerRender.setPosition(new float[]{realCenter.x, realCenter.y}, Math.abs(leftEye.x - rightEye.x) / RAW_WIDTH * 2);
+                Log.d(TAG, String.format("left point:%s,right point:%s,center point:%s",leftEye.toString(), rightEye.toString(), realCenter.toString()));
+                stickerRender.setPosition(new float[]{realCenter.x, realCenter.y}, Math.abs(leftEye.x - rightEye.x) / RAW_HEIGHT * 1.9f );
             }
 
             texture.bindData(stickerRender);
@@ -160,8 +162,8 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     private PointF rawPointToRealPoint(PointF rawPoint) {
         return new PointF(
-                1 - rawPoint.x / RAW_WIDTH * 2,
-                1 - rawPoint.y / RAW_WIDTH * 2
+                1 - rawPoint.x / RAW_HEIGHT * 2.0f,
+                1.0f*RAW_WIDTH / RAW_HEIGHT - rawPoint.y / RAW_WIDTH * 2.0f * RAW_WIDTH / RAW_HEIGHT
         );
     }
 
