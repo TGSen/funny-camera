@@ -1,9 +1,15 @@
 package top.icecream.testme.opengl;
 
 import android.content.Context;
+import android.graphics.PointF;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLSurfaceView;
+import android.util.Log;
+import android.util.SparseArray;
+
+import com.google.android.gms.vision.face.Face;
+import com.google.android.gms.vision.face.Landmark;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,10 +19,10 @@ import javax.microedition.khronos.opengles.GL10;
 
 import top.icecream.testme.R;
 import top.icecream.testme.camera.Camera;
-import top.icecream.testme.opengl.filter.LineFilterRender;
+import top.icecream.testme.opengl.filter.AsciiFilterRender;
 import top.icecream.testme.opengl.filter.FilterRender;
 import top.icecream.testme.opengl.filter.GrayFilterRender;
-import top.icecream.testme.opengl.filter.AsciiFilterRender;
+import top.icecream.testme.opengl.filter.LineFilterRender;
 import top.icecream.testme.opengl.filter.OriginalFilterRender;
 import top.icecream.testme.opengl.filter.ReliefFilterRender;
 import top.icecream.testme.opengl.sticker.StickerRender;
@@ -27,6 +33,7 @@ import static android.opengl.GLES20.glClear;
 import static android.opengl.GLES20.glClearColor;
 import static android.opengl.GLES20.glViewport;
 import static android.opengl.Matrix.orthoM;
+import static top.icecream.testme.camera.Camera.RAW_WIDTH;
 
 /**
  * AUTHOR: 86417
@@ -47,6 +54,8 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private GLSurfaceView glSV;
     private List<FilterRender> filterRenderList = new LinkedList<>();
     private List<Integer> stickerList = new LinkedList<>();
+    private int previewWidth;
+    private int previewHeight;
 
     private final float[] projectionMatrix = new float[16];
     private Camera camera;
@@ -90,6 +99,9 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         glViewport(0, 0, width, height);
+        // previewWidth = 1200, previewHeight = 1830
+        this.previewWidth = width;
+        this.previewHeight = height;
 
         final float aspectRatio = width > height ?
                 (float) width / (float) height:
@@ -113,6 +125,36 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         if (stickerId != 0) {
             stickerRender.useProgram();
             stickerRender.setUniforms(projectionMatrix, stickerId);
+
+            float radius = 0;
+            PointF center = null;
+            PointF leftEye = null, rightEye = null;
+            SparseArray<Face> faces = camera.getFaces();
+            if (faces.size() > 0) {
+                int key = faces.keyAt(0);
+                Face face = faces.get(key);
+                List<Landmark> landmarks = face.getLandmarks();
+                for (Landmark landmark : landmarks) {
+                    switch (landmark.getType()) {
+                        case Landmark.LEFT_EYE:
+                            leftEye = landmark.getPosition();
+                            break;
+                        case Landmark.RIGHT_EYE:
+                            rightEye = landmark.getPosition();
+                            break;
+                    }
+                }
+            }
+            if (leftEye != null && rightEye != null) {
+                radius = Math.abs(leftEye.x - rightEye.x) / RAW_WIDTH / 2;
+
+                Log.d(TAG, String.format("left point:%s,right point:%s",leftEye.toString(), rightEye.toString()));
+                center = new PointF();
+                stickerRender.setPosition(new float[]{center.x, center.y}, radius);
+            }
+
+
+
             texture.bindData(stickerRender);
             texture.draw();
         }

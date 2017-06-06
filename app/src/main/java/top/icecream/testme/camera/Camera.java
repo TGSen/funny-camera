@@ -5,33 +5,25 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
-import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
-import com.google.android.gms.vision.face.Landmark;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
-
-import static android.content.ContentValues.TAG;
 
 /**
  * AUTHOR: 86417
@@ -39,6 +31,9 @@ import static android.content.ContentValues.TAG;
  */
 
 public class Camera {
+
+    public static final int RAW_WIDTH = 640;
+    public static final int RAW_HEIGHT = 480;
 
     private Context context;
     private Handler handler;
@@ -48,13 +43,12 @@ public class Camera {
     private CaptureRequest.Builder requestBuilder;
 
     private Size previewSize;
-    private static final int WIDTH = 1280;
-    private static final int HEIGHT = 720;
 
     private SurfaceTexture surfaceTexture;
     private FaceDetector detector;
     private FaceDetectionProcessor faceDetectThread;
     private Image image = null;
+    private SparseArray<Face> faces;
 
 
     public Camera(Context context) {
@@ -80,14 +74,8 @@ public class Camera {
     @SuppressWarnings("MissingPermission")
     public void openCamera() {
         try {
+            previewSize = new Size(RAW_WIDTH, RAW_HEIGHT);
             CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics c = cameraManager.getCameraCharacteristics(cameraId + "");
-            StreamConfigurationMap map = c.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            Size[] sizes = map.getOutputSizes(SurfaceHolder.class);
-            for (Size size : sizes) {
-                Log.d(TAG, "openCamera: size" + size.toString());
-            }
-            previewSize = new Size(WIDTH, HEIGHT);
             cameraManager.openCamera("" + cameraId, cameraStateCallback, handler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -225,15 +213,7 @@ public class Camera {
                         .setRotation(rotation)
                         .build();
 
-                SparseArray<Face> faces = detector.detect(outputFrame);
-                Log.d(TAG, "run: face num" + faces.size());
-                for (int i = 0; i < faces.size(); i++) {
-                    Face face = faces.valueAt(i);
-                    List<Landmark> landmarks = face.getLandmarks();
-                    for (Landmark landmark : landmarks) {
-                        Log.d("logFaceData: ", "type + "+landmark.getType() +":"+ landmark.getPosition().toString());
-                    }
-                }
+                faces = detector.detect(outputFrame);
             }
         }
 
@@ -248,6 +228,9 @@ public class Camera {
         }
     }
 
+    public SparseArray<Face> getFaces() {
+        return faces;
+    }
 
     /*private ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override

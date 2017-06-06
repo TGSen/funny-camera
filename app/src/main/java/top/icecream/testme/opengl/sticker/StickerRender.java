@@ -27,9 +27,6 @@ public class StickerRender extends Shader {
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
 
-    private static final String U_POSITION_COORDINATES = "u_PositionCoordinates";
-    private final int uPositionCoordinates;
-
     public StickerRender(Context context) {
         super(context, R.raw.sticker_vertex_shader,R.raw.sticker_fragment_shader);
 
@@ -39,18 +36,7 @@ public class StickerRender extends Shader {
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
 
-        uPositionCoordinates = glGetUniformLocation(program, U_POSITION_COORDINATES);
-
-        coordinates = new float[]{
-                //order of coordinate:X,Y,S,T
-                //Triangle fan
-                0f, 0f, 0.5f, 0.5f,
-                -1f, -1f, 0f, 0f,
-                1f, -1f, 1f, 0f,
-                1f, 1f, 1f, 1f,
-                -1f, 1f, 0f, 1f,
-                -1f, -1f, 0f, 0f
-        };
+        setPosition(new float[]{0f, 0f}, 0);
     }
 
     public void setUniforms(float[] matrix, int textureId) {
@@ -68,11 +54,16 @@ public class StickerRender extends Shader {
         return aTextureCoordinatesLocation;
     }
 
-    public int getPositionCoordinates(){
-        return uPositionCoordinates;
-    }
-
-    public void setCoordinates(float[] tmp) {
-        coordinates = tmp;
+    public void setPosition(float[] center, float radius) {
+        coordinates = new float[]{
+                //order of coordinate:X,Y,S,T
+                //Triangle fan
+                center[0], center[1], 0.5f, 0.5f,
+                center[0] - radius, center[1] - radius, 0f, 0f,
+                center[0] + radius, center[1] - radius, 1f, 0f,
+                center[0] + radius, center[1] + radius, 1f, 1f,
+                center[0] - radius, center[1] + radius, 0f, 1f,
+                center[0] - radius, center[1] - radius, 0f, 0f
+        };
     }
 }
