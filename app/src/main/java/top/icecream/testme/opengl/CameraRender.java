@@ -118,7 +118,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         glClear(GL_COLOR_BUFFER_BIT);
 
         filterRender.useProgram();
-        filterRender.bindTexture(imageId);
+        filterRender.bindTexture(imageId, projectionMatrix);
         texture.bindData(filterRender);
         texture.draw();
 
@@ -126,7 +126,6 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
             stickerRender.useProgram();
             stickerRender.setUniforms(projectionMatrix, stickerId);
 
-            float radius = 0;
             PointF center = null;
             PointF leftEye = null, rightEye = null;
             SparseArray<Face> faces = camera.getFaces();
@@ -146,20 +145,24 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
                 }
             }
             if (leftEye != null && rightEye != null) {
-                radius = Math.abs(leftEye.x - rightEye.x) / RAW_WIDTH / 2;
-
                 Log.d(TAG, String.format("left point:%s,right point:%s",leftEye.toString(), rightEye.toString()));
-                center = new PointF();
-                stickerRender.setPosition(new float[]{center.x, center.y}, radius);
+                center = new PointF((leftEye.x + rightEye.x) / 2, (leftEye.y + rightEye.y) / 2);
+                PointF realCenter = rawPointToRealPoint(center);
+                stickerRender.setPosition(new float[]{realCenter.x, realCenter.y}, Math.abs(leftEye.x - rightEye.x) / RAW_WIDTH * 2);
             }
-
-
 
             texture.bindData(stickerRender);
             texture.draw();
         }
 
         cameraTexture.updateTexImage();
+    }
+
+    private PointF rawPointToRealPoint(PointF rawPoint) {
+        return new PointF(
+                1 - rawPoint.x / RAW_WIDTH * 2,
+                1 - rawPoint.y / RAW_WIDTH * 2
+        );
     }
 
     @Override
