@@ -24,6 +24,8 @@ import com.google.android.gms.vision.face.FaceDetector;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * AUTHOR: 86417
@@ -46,7 +48,11 @@ public class Camera {
 
     private SurfaceTexture surfaceTexture;
     private FaceDetector detector;
-    private SparseArray<Face> faces;
+    private SparseArray<Face> faces = null;
+
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    public final Object LOCK = new Object();
+
 
 
     public Camera(Context context) {
@@ -57,7 +63,7 @@ public class Camera {
 
     private void initFaceDetection() {
         detector = new FaceDetector.Builder(context)
-                .setTrackingEnabled(true)
+                .setTrackingEnabled(false)
                 .setLandmarkType(FaceDetector.ALL_LANDMARKS)
                 .setMode(FaceDetector.FAST_MODE)
                 .build();
@@ -91,7 +97,7 @@ public class Camera {
     }
 
     private void startPreview(@NonNull CameraDevice camera) {
-        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 1);
+        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
         imagePreviewReader.setOnImageAvailableListener(previewAvailableListener, handler);
 
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
@@ -150,12 +156,18 @@ public class Camera {
 
     private final ImageReader.OnImageAvailableListener previewAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
-        public void onImageAvailable(ImageReader reader) {
-            Image image = reader.acquireNextImage();
-            detectFaces(image);
-            image.close();
+        public void onImageAvailable(final ImageReader reader) {
+            executorService.execute(new Runnable() {
+                @Override
+                public void run() {
+                    Image image = reader.acquireLatestImage();
+                    detectFaces(image);
+                    image.close();
+                }
+            });
         }
     };
+
 
     private void detectFaces(Image image) {
         int rotation;
@@ -169,7 +181,6 @@ public class Camera {
                         previewSize.getHeight(), ImageFormat.NV21)
                 .setRotation(rotation)
                 .build();
-
         faces = detector.detect(outputFrame);
     }
 
@@ -187,6 +198,10 @@ public class Camera {
 
     public SparseArray<Face> getFaces() {
         return faces;
+    }
+
+    public void setFacesNull() {
+        faces = null;
     }
 
     /*private ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {

@@ -119,7 +119,15 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         glClear(GL_COLOR_BUFFER_BIT);
         drawImage();
         if (stickerId != 0) {
+            while (camera.getFaces() == null) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
             drawSticker();
+            camera.setFacesNull();
         }
         cameraTexture.updateTexImage();
     }
