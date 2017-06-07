@@ -51,7 +51,7 @@ public class Camera {
     private SparseArray<Face> faces = null;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    public final Object LOCK = new Object();
+    private final Object LOCK = new Object();
 
 
 
@@ -160,9 +160,11 @@ public class Camera {
             executorService.execute(new Runnable() {
                 @Override
                 public void run() {
+                synchronized (LOCK) {
                     Image image = reader.acquireLatestImage();
                     detectFaces(image);
                     image.close();
+                }
                 }
             });
         }
@@ -198,6 +200,10 @@ public class Camera {
 
     public SparseArray<Face> getFaces() {
         return faces;
+    }
+
+    public Object getLock() {
+        return LOCK;
     }
 
     public void setFacesNull() {
