@@ -5,7 +5,6 @@ import android.graphics.PointF;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLSurfaceView;
-import android.util.Log;
 import android.util.SparseArray;
 
 import com.google.android.gms.vision.face.Face;
@@ -79,6 +78,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         stickerList.add(TextureHelper.loadTexture(context, R.raw.glasses));
         stickerList.add(TextureHelper.loadTexture(context, R.raw.mustache));
         stickerList.add(TextureHelper.loadTexture(context, R.raw.nose));
+        stickerList.add(TextureHelper.loadTexture(context, R.raw.circle));
 
 
         glClearColor(0f,0f,0f,1f);
@@ -117,47 +117,57 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     @Override
     public void onDrawFrame(GL10 gl) {
         glClear(GL_COLOR_BUFFER_BIT);
+        drawImage();
+        if (stickerId != 0) {
+            drawSticker();
+        }
+        cameraTexture.updateTexImage();
+    }
 
+    private void drawImage() {
         filterRender.useProgram();
         filterRender.bindTexture(imageId, projectionMatrix);
         texture.bindData(filterRender);
         texture.draw();
+    }
 
-        if (stickerId != 0) {
-            stickerRender.useProgram();
-            stickerRender.setUniforms(projectionMatrix, stickerId);
+    private void drawSticker() {
+        stickerRender.useProgram();
+        stickerRender.setUniforms(projectionMatrix, stickerId);
 
-            PointF center = null;
-            PointF leftEye = null, rightEye = null;
-            SparseArray<Face> faces = camera.getFaces();
-            if (faces.size() > 0) {
-                int key = faces.keyAt(0);
-                Face face = faces.get(key);
-                List<Landmark> landmarks = face.getLandmarks();
-                for (Landmark landmark : landmarks) {
-                    switch (landmark.getType()) {
-                        case Landmark.LEFT_EYE:
-                            leftEye = landmark.getPosition();
-                            break;
-                        case Landmark.RIGHT_EYE:
-                            rightEye = landmark.getPosition();
-                            break;
-                    }
+        PointF center = null;
+        PointF leftEye = null, rightEye = null;
+        PointF noseBase = null;
+        SparseArray<Face> faces = camera.getFaces();
+        if (faces.size() > 0) {
+            int key = faces.keyAt(0);
+            Face face = faces.get(key);
+            List<Landmark> landmarks = face.getLandmarks();
+            for (Landmark landmark : landmarks) {
+                switch (landmark.getType()) {
+                    case Landmark.LEFT_EYE:
+                        leftEye = landmark.getPosition();
+                        break;
+                    case Landmark.RIGHT_EYE:
+                        rightEye = landmark.getPosition();
+                        break;
+                    case Landmark.NOSE_BASE:
+                        noseBase = landmark.getPosition();
                 }
             }
-            if (leftEye != null && rightEye != null) {
-
-                center = new PointF((leftEye.x + rightEye.x) / 2, (leftEye.y + rightEye.y) / 2);
-                PointF realCenter = rawPointToRealPoint(center);
-                Log.d(TAG, String.format("left point:%s,right point:%s,center point:%s",leftEye.toString(), rightEye.toString(), realCenter.toString()));
-                stickerRender.setPosition(new float[]{realCenter.x, realCenter.y}, Math.abs(leftEye.x - rightEye.x) / RAW_HEIGHT * 1.9f );
-            }
-
-            texture.bindData(stickerRender);
-            texture.draw();
+        }
+        /*if (leftEye != null && rightEye != null) {
+            center = new PointF((leftEye.x + rightEye.x) / 2, (leftEye.y + rightEye.y) / 2);
+            PointF realCenter = rawPointToRealPoint(center);
+            stickerRender.setPosition(new float[]{realCenter.x, realCenter.y}, Math.abs(leftEye.x - rightEye.x) / RAW_HEIGHT * 2.0f );
+        }*/
+        if (noseBase != null && leftEye != null && rightEye != null) {
+            PointF real = rawPointToRealPoint(noseBase);
+            stickerRender.setPosition(new float[]{real.x, real.y}, Math.abs(leftEye.x - rightEye.x) / RAW_HEIGHT / 2.0f);
         }
 
-        cameraTexture.updateTexImage();
+        texture.bindData(stickerRender);
+        texture.draw();
     }
 
     private PointF rawPointToRealPoint(PointF rawPoint) {

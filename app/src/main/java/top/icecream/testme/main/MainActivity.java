@@ -41,13 +41,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-        initButton();
         initCamera();
         initList();
-    }
-
-    private void initButton() {
-        AnimatorHelper.buttonMoveIn(albumBtn,changeCameraBtn,infoBtn,stickerBtn,takePictureBtn,filterBtn);
     }
 
     private void initList() {

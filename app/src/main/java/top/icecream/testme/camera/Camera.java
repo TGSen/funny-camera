@@ -46,8 +46,6 @@ public class Camera {
 
     private SurfaceTexture surfaceTexture;
     private FaceDetector detector;
-    private FaceDetectionProcessor faceDetectThread;
-    private Image image = null;
     private SparseArray<Face> faces;
 
 
@@ -61,10 +59,8 @@ public class Camera {
         detector = new FaceDetector.Builder(context)
                 .setTrackingEnabled(true)
                 .setLandmarkType(FaceDetector.ALL_LANDMARKS)
-                .setMode(FaceDetector.ACCURATE_MODE)
+                .setMode(FaceDetector.FAST_MODE)
                 .build();
-        faceDetectThread = new FaceDetectionProcessor();
-        faceDetectThread.start();
     }
 
     public void setSurfaceTexture(SurfaceTexture surfaceTexture) {
@@ -95,7 +91,6 @@ public class Camera {
     }
 
     private void startPreview(@NonNull CameraDevice camera) {
-
         ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 1);
         imagePreviewReader.setOnImageAvailableListener(previewAvailableListener, handler);
 
@@ -156,11 +151,27 @@ public class Camera {
     private final ImageReader.OnImageAvailableListener previewAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(ImageReader reader) {
-            image = reader.acquireNextImage();
-            faceDetectThread.setData(convertYUV420888ToNV21(image));
+            Image image = reader.acquireNextImage();
+            detectFaces(image);
             image.close();
         }
     };
+
+    private void detectFaces(Image image) {
+        int rotation;
+        if (cameraId == 0) {
+            rotation = Frame.ROTATION_90;
+        } else {
+            rotation = Frame.ROTATION_270;
+        }
+        Frame outputFrame = new Frame.Builder()
+                .setImageData(ByteBuffer.wrap(convertYUV420888ToNV21(image)), previewSize.getWidth(),
+                        previewSize.getHeight(), ImageFormat.NV21)
+                .setRotation(rotation)
+                .build();
+
+        faces = detector.detect(outputFrame);
+    }
 
     private byte[] convertYUV420888ToNV21(Image imgYUV420) {
         byte[] data;
@@ -172,60 +183,6 @@ public class Camera {
         buffer0.get(data, 0, buffer0_size);
         buffer2.get(data, buffer0_size, buffer2_size);
         return data;
-    }
-
-
-    private class FaceDetectionProcessor extends Thread {
-
-        private boolean isRunning = true;
-        private final Object lock = new Object();
-        private byte[] data = null;
-
-        @Override
-        public void run() {
-            while (isRunning) {
-
-                try {
-                    Thread.sleep(35);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
-                if (image == null || data == null) {
-                    continue;
-                }
-
-                int rotation;
-                if (cameraId == 0) {
-                    rotation = Frame.ROTATION_90;
-                } else {
-                    rotation = Frame.ROTATION_270;
-                }
-
-                Frame outputFrame;
-                byte[] yuv;
-                synchronized (lock) {
-                    yuv = data;
-                }
-                outputFrame = new Frame.Builder()
-                        .setImageData(ByteBuffer.wrap(yuv), previewSize.getWidth(),
-                                previewSize.getHeight(), ImageFormat.NV21)
-                        .setRotation(rotation)
-                        .build();
-
-                faces = detector.detect(outputFrame);
-            }
-        }
-
-        public void setData(byte[] data) {
-            synchronized (lock) {
-                this.data = data;
-            }
-        }
-
-        private void setRunning(boolean isRunning) {
-            this.isRunning = isRunning;
-        }
     }
 
     public SparseArray<Face> getFaces() {
