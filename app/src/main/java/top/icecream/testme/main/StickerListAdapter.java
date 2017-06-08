@@ -55,6 +55,7 @@ public class StickerListAdapter extends RecyclerView.Adapter<StickerListAdapter.
     public void onClick(View v) {
         int position = (int) v.getTag();
         cameraRender.selectSticker(position);
+
     }
 
     class ViewHolder extends RecyclerView.ViewHolder{

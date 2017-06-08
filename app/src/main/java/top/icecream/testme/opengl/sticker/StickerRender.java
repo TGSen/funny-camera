@@ -36,11 +36,18 @@ public class StickerRender extends Shader {
         aPositionLocation = glGetAttribLocation(program, A_POSITION);
         aTextureCoordinatesLocation = glGetAttribLocation(program, A_TEXTURE_COORDINATES);
 
-        setPosition(new float[]{0f, 0f}, 0);
+        setPosition(new float[]{0f, 0f}, 0, 0);
     }
 
-    public void setUniforms(float[] matrix, int textureId) {
+    public void setMatrix(float[] matrix) {
         glUniformMatrix4fv(uMatrixLocation, 1, false, matrix, 0);
+    }
+
+    public void bindTexture() {
+
+    }
+
+    protected void bindTexture(int textureId) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureId);
         glUniform1i(uTextureUnitLocation, 0);
@@ -54,16 +61,16 @@ public class StickerRender extends Shader {
         return aTextureCoordinatesLocation;
     }
 
-    public void setPosition(float[] center, float radius) {
+    public void setPosition(float[] center, float xRadius, float yRadius) {
         coordinates = new float[]{
                 //order of coordinate:X,Y,S,T
                 //Triangle fan
                 center[0], center[1], 0.5f, 0.5f,
-                center[0] - radius, center[1] - radius, 0f, 1f,
-                center[0] + radius, center[1] - radius, 1f, 1f,
-                center[0] + radius, center[1] + radius, 1f, 0f,
-                center[0] - radius, center[1] + radius, 0f, 0f,
-                center[0] - radius, center[1] - radius, 0f, 1f
+                center[0] - xRadius, center[1] - yRadius, 0f, 1f,
+                center[0] + xRadius, center[1] - yRadius, 1f, 1f,
+                center[0] + xRadius, center[1] + yRadius, 1f, 0f,
+                center[0] - xRadius, center[1] + yRadius, 0f, 0f,
+                center[0] - xRadius, center[1] - yRadius, 0f, 1f
         };
     }
 }

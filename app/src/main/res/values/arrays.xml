@@ -11,8 +11,7 @@
     <string-array name="sticker">
         <item>无</item>
         <item>眼镜</item>
-        <item>胡子</item>
         <item>鼻子</item>
-        <item>圆鼻子</item>
+        <item>胡子</item>
     </string-array>
 </resources>

@@ -1,6 +1,5 @@
 package top.icecream.testme.main;
 
-import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -14,10 +13,9 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import top.icecream.testme.R;
-import top.icecream.testme.info.AboutActivity;
-import top.icecream.testme.opengl.CameraRender;
 import top.icecream.testme.main.utils.AnimatorHelper;
 import top.icecream.testme.main.utils.PermissionHelper;
+import top.icecream.testme.opengl.CameraRender;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -77,12 +75,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @OnClick(R.id.changeCameraBtn) void changeCamera() {
-        cameraRender.changCamera();
+        /*cameraRender.changCamera();*/
     }
 
     @OnClick(R.id.infoBtn) void openInfo(){
-        Intent intent = new Intent(this, AboutActivity.class);
-        startActivity(intent);
+        /*Intent intent = new Intent(this, AboutActivity.class);
+        startActivity(intent);*/
     }
 
     @OnClick(R.id.filterBtn) void showFilter(){
