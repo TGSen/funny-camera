@@ -1,9 +1,12 @@
 package top.icecream.testme.opengl;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+import android.opengl.GLException;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.util.SparseArray;
@@ -11,6 +14,7 @@ import android.util.SparseArray;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.Landmark;
 
+import java.nio.IntBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -26,6 +30,7 @@ import top.icecream.testme.opengl.filter.GrayFilterRender;
 import top.icecream.testme.opengl.filter.LineFilterRender;
 import top.icecream.testme.opengl.filter.OriginalFilterRender;
 import top.icecream.testme.opengl.filter.ReliefFilterRender;
+import top.icecream.testme.opengl.sticker.FaceStickerRender;
 import top.icecream.testme.opengl.sticker.GlassesStickerRender;
 import top.icecream.testme.opengl.sticker.MustacheStickerRender;
 import top.icecream.testme.opengl.sticker.NoseStickerRender;
@@ -62,6 +67,9 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private final float[] projectionMatrix = new float[16];
     private Camera camera;
     private Lock stickerRenderLock = new ReentrantLock();
+    private volatile boolean isTakePic = false;
+    private int previewWidth;
+    private int previewHeight;
 
     public CameraRender(Context context, GLSurfaceView glSV) {
         this.context = context;
@@ -70,7 +78,6 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-
         filterRenderList.add(new OriginalFilterRender(context));
         filterRenderList.add(new GrayFilterRender(context));
         filterRenderList.add(new ReliefFilterRender(context));
@@ -81,6 +88,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         stickerRenderList.add(new GlassesStickerRender(context));
         stickerRenderList.add(new NoseStickerRender(context));
         stickerRenderList.add(new MustacheStickerRender(context));
+        stickerRenderList.add(new FaceStickerRender(context));
 
         glClearColor(0f,0f,0f,1f);
 
@@ -100,6 +108,8 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         glViewport(0, 0, width, height);
+        this.previewWidth = width;
+        this.previewHeight = height;
 
         final float aspectRatio = width > height ?
                 (float) width / (float) height:
@@ -126,9 +136,92 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         }finally {
             stickerRenderLock.unlock();
         }
-
         cameraTexture.updateTexImage();
+
+        if (isTakePic) {
+            try {
+                isTakePic = false;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
+
+    public void takePicture() {
+        isTakePic = true;
+    }
+
+    private Bitmap createBitmapFromGLSurface(int x, int y, int w, int h) {
+        int bitmapBuffer[] = new int[w * h];
+        int bitmapSource[] = new int[w * h];
+        IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
+        intBuffer.position(0);
+
+        try {
+            GLES20.glReadPixels(x, y, w, h, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, intBuffer);
+            int offset1, offset2;
+            for (int i = 0; i < h; i++) {
+                offset1 = i * w;
+                offset2 = (h - i - 1) * w;
+                for (int j = 0; j < w; j++) {
+                    int texturePixel = bitmapBuffer[offset1 + j];
+                    int blue = (texturePixel >> 16) & 0xff;
+                    int red = (texturePixel << 16) & 0x00ff0000;
+                    int pixel = (texturePixel & 0xff00ff00) | red | blue;
+                    bitmapSource[offset2 + j] = pixel;
+                }
+            }
+        } catch (GLException e) {
+            return null;
+        }
+        return Bitmap.createBitmap(bitmapSource, w, h, Bitmap.Config.ARGB_8888);
+    }
+
+
+/*    private void takingPicture() {
+        int width = previewWidth;
+        int height = previewHeight;
+        int b[] = new int[width * height];
+        int bt[] = new int[width * height];
+        IntBuffer buffer = IntBuffer.wrap(b);
+        buffer.position(0);
+        GLES20.glReadPixels(0, 0, width, height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buffer);
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                int pix = b[i * width + j];
+                int pb = (pix >> 16) & 0xff;
+                int pr = (pix << 16) & 0x00ff0000;
+                int pix1 = (pix & 0xff00ff00) | pr | pb;
+                bt[(height - i - 1) * width + j] = pix1;
+            }
+        }
+        Bitmap inBitmap;
+        inBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+        inBitmap.copyPixelsFromBuffer(buffer);
+        inBitmap = Bitmap.createBitmap(bt, width, height, Bitmap.Config.RGB_565);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        inBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bos);
+        byte[] bitmapData = bos.toByteArray();
+        ByteArrayInputStream fis = new ByteArrayInputStream(bitmapData);
+        String tempPicFile = "temp_" + System.currentTimeMillis() + ".jpeg";
+        File tempDir = new File(Environment.getExternalStorageDirectory() + File.separator +
+                "SurfaceScreenShot" + File.separator + "Images");
+        tempDir.mkdirs();
+        try {
+            File tmpFile = new File(tempDir, tempPicFile);
+            FileOutputStream fos = new FileOutputStream(tmpFile);
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = fis.read(buf)) > 0) {
+                fos.write(buf, 0, len);
+            }
+            fis.close();
+            fos.close();
+            inBitmap.recycle();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }*/
 
     private void drawImage() {
         filterRender.useProgram();
@@ -138,19 +231,27 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     }
 
     private void drawSticker(SparseArray<Face> faces) {
+        PointF faceCenter;
         PointF leftEye = null;
         PointF rightEye = null;
         PointF noseBase = null;
         PointF bottomMouth = null;
-        float[] mRotationMatrix = new float[16];
+        final float PI = 3.1415926f;
+        final float DEG = PI / 180;
+        float[] rotationZMatrix = new float[16];
+        float[] rotationYMatrix = new float[16];
         float[] scratch = new float[16];
+        float faceWidth;
+        float faceHeight;
 
         if (faces.size() <= 0) {
             return;
         }
         Face face = faces.get(faces.keyAt(0));
-        Matrix.setRotateM(mRotationMatrix, 0, face.getEulerZ(), 0f, 0f, -1.0f);
-        Matrix.multiplyMM(scratch, 0, projectionMatrix, 0, mRotationMatrix, 0);
+        Matrix.setRotateM(rotationZMatrix, 0, face.getEulerZ(), 0, 0, -1);
+        Matrix.setRotateM(rotationYMatrix, 0, face.getEulerY(), 0, -1, 0);
+        Matrix.multiplyMM(scratch, 0, projectionMatrix, 0, rotationZMatrix, 0);
+        Matrix.multiplyMM(scratch, 0, scratch, 0, rotationYMatrix, 0);
         List<Landmark> landmarks = face.getLandmarks();
         for (Landmark landmark : landmarks) {
             switch (landmark.getType()) {
@@ -160,43 +261,57 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
                 case Landmark.BOTTOM_MOUTH:bottomMouth = rawPointToRealPoint(landmark.getPosition());break;
             }
         }
+        faceCenter = rawPointToRealPoint(face.getPosition());
+        faceWidth = face.getWidth() / RAW_HEIGHT;
+        faceHeight = face.getHeight() / RAW_HEIGHT;
+        faceCenter.x = faceCenter.x - faceWidth;
+        faceCenter.y = faceCenter.y - faceHeight;
 
         stickerRender.useProgram();
         stickerRender.setMatrix(scratch);
         stickerRender.bindTexture();
 
-        if (leftEye != null && rightEye != null && stickerRender instanceof GlassesStickerRender) {
+        if (noseBase != null && stickerRender instanceof GlassesStickerRender) {
             float centerX, centerY;
             float xRadius, yRadius;
-            centerX = (leftEye.x + rightEye.x) / 2;
-            centerY = (leftEye.y + rightEye.y) / 2;
-            xRadius = Math.abs(leftEye.x - rightEye.x) / 0.8f;
+            xRadius = faceWidth / 1.2f;
             yRadius = xRadius * 128 / 408;
+            centerX = noseBase.x;
+            centerY = noseBase.y + yRadius * 1.9f;
             stickerRender.setPosition(new float[]{centerX, centerY}, xRadius, yRadius);
         }
 
-        if (noseBase != null && bottomMouth != null && stickerRender instanceof NoseStickerRender) {
+        if (leftEye != null && rightEye != null && noseBase != null && bottomMouth != null && stickerRender instanceof NoseStickerRender) {
             float centerX, centerY;
             float xRadius, yRadius;
-            xRadius = Math.abs(noseBase.y - bottomMouth.y) * 1.7f;
+            xRadius = faceWidth / 1.5f;
             yRadius = xRadius * 1.0f;
             centerX = noseBase.x;
-            centerY = noseBase.y + (noseBase.y - bottomMouth.y) / 1.5f;
+            centerY = noseBase.y + yRadius / 4.0f;
+
             stickerRender.setPosition(new float[]{centerX, centerY}, xRadius, yRadius);
         }
 
-        if (bottomMouth != null && noseBase != null && stickerRender instanceof MustacheStickerRender) {
+        if (noseBase != null && stickerRender instanceof MustacheStickerRender) {
             float centerX, centerY;
             float xRadius, yRadius;
-            xRadius = Math.abs(noseBase.y - bottomMouth.y) / 1.2f;
+            xRadius = faceWidth / 4.0f;
             yRadius = xRadius * 1.0f;
-            centerX = bottomMouth.x;
-            centerY = bottomMouth.y +  (noseBase.y - bottomMouth.y) / 2.0f;
+            centerX = noseBase.x;
+            centerY = noseBase.y - yRadius / 2.0f;
             stickerRender.setPosition(new float[]{centerX, centerY}, xRadius, yRadius);
+        }
+
+        if (stickerRender instanceof FaceStickerRender) {
+            stickerRender.setPosition(new float[]{faceCenter.x, faceCenter.y}, faceWidth, faceHeight);
         }
 
         texture.bindData(stickerRender);
         texture.draw();
+    }
+
+    private float getLength(PointF a, PointF b) {
+        return (float) Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
     }
 
     private PointF rawPointToRealPoint(PointF rawPoint) {

@@ -7,10 +7,14 @@
     tools:ignore="HardcodedText">
 
     <ImageView
-        android:id="@+id/imageView"
         android:layout_width="45dp"
         android:layout_height="45dp"
-        android:src="@mipmap/ic_launcher_round"
+        android:background="@drawable/bg_round"/>
+
+    <ImageView
+        android:id="@+id/stickerIV"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
         android:layout_centerHorizontal="true"/>
 
     <TextView
@@ -20,6 +24,6 @@
         android:text="TextView"
         android:textSize="10sp"
         android:textColor="@color/white"
-        android:layout_below="@id/imageView"
+        android:layout_below="@id/stickerIV"
         android:layout_centerHorizontal="true"/>
 </RelativeLayout>

@@ -1,5 +1,6 @@
 package top.icecream.testme.main;
 
+import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -13,17 +14,16 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import top.icecream.testme.R;
+import top.icecream.testme.info.AboutActivity;
 import top.icecream.testme.main.utils.AnimatorHelper;
 import top.icecream.testme.main.utils.PermissionHelper;
 import top.icecream.testme.opengl.CameraRender;
 
-
 public class MainActivity extends AppCompatActivity {
 
-    @BindView(R.id.albumBtn) Button albumBtn;
     @BindView(R.id.changeCameraBtn) Button changeCameraBtn;
     @BindView(R.id.infoBtn) Button infoBtn;
-    @BindView(R.id.stickBtn) Button stickerBtn;
+    @BindView(R.id.stickerBtn) Button stickerBtn;
     @BindView(R.id.takePictureBtn) Button takePictureBtn;
     @BindView(R.id.filterBtn) Button filterBtn;
 
@@ -71,16 +71,14 @@ public class MainActivity extends AppCompatActivity {
         isRender = true;
     }
 
-    @OnClick(R.id.albumBtn) void openAlbum(){
-    }
 
     @OnClick(R.id.changeCameraBtn) void changeCamera() {
-        /*cameraRender.changCamera();*/
+        cameraRender.changCamera();
     }
 
     @OnClick(R.id.infoBtn) void openInfo(){
-        /*Intent intent = new Intent(this, AboutActivity.class);
-        startActivity(intent);*/
+        Intent intent = new Intent(this, AboutActivity.class);
+        startActivity(intent);
     }
 
     @OnClick(R.id.filterBtn) void showFilter(){
@@ -88,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         AnimatorHelper.listEmerge(filterRV);
     }
 
-    @OnClick(R.id.stickBtn) void showSticker() {
+    @OnClick(R.id.stickerBtn) void showSticker() {
         AnimatorHelper.buttonVanish(filterBtn, stickerBtn, takePictureBtn);
         AnimatorHelper.listEmerge(stickerRV);
     }
@@ -101,6 +99,10 @@ public class MainActivity extends AppCompatActivity {
             AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
             AnimatorHelper.listVanish(stickerRV);
         }
+    }
+
+    @OnClick(R.id.takePictureBtn) void takePicture() {
+        cameraRender.takePicture();
     }
 
     @Override

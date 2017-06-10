@@ -23,14 +23,14 @@ public class FilterListAdapter extends RecyclerView.Adapter<FilterListAdapter.Vi
 
     private final CameraRender cameraRender;
     private Context context;
-    private List<String> filters;
+    private List<String> filterName;
 
     public FilterListAdapter(Context context, CameraRender cameraRender) {
         super();
         this.context = context;
         this.cameraRender = cameraRender;
         String[] filtersArr = context.getResources().getStringArray(R.array.filter);
-        filters = Arrays.asList(filtersArr);
+        filterName = Arrays.asList(filtersArr);
     }
 
     @Override
@@ -42,13 +42,13 @@ public class FilterListAdapter extends RecyclerView.Adapter<FilterListAdapter.Vi
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        ((TextView) holder.view.findViewById(R.id.textView)).setText(filters.get(position));
+        ((TextView) holder.view.findViewById(R.id.textView)).setText(filterName.get(position));
         holder.view.setTag(position);
     }
 
     @Override
     public int getItemCount() {
-        return filters.size();
+        return filterName.size();
     }
 
     @Override

@@ -35,10 +35,13 @@ public class Camera {
     public static final int RAW_WIDTH = 640;
     public static final int RAW_HEIGHT = 480;
 
+    private static final int BACK = 0;
+    private static final int FRONT = 1;
+
     private Context context;
     private Handler handler;
 
-    private int cameraId = 1;
+    private int cameraId = FRONT;
     private CameraDevice cameraDevice;
     private CaptureRequest.Builder requestBuilder;
 
@@ -54,15 +57,6 @@ public class Camera {
         this.context = context;
         initLooper();
         initFaceDetection();
-    }
-
-    private void initFaceDetection() {
-        detector = new FaceDetector.Builder(context)
-                .setTrackingEnabled(false)
-                .setProminentFaceOnly(true)
-                .setLandmarkType(FaceDetector.ALL_CLASSIFICATIONS)
-                .setMode(FaceDetector.ACCURATE_MODE)
-                .build();
     }
 
     public void setSurfaceTexture(SurfaceTexture surfaceTexture) {
@@ -82,8 +76,16 @@ public class Camera {
 
     public void changeCamera() {
         cameraDevice.close();
-        cameraId = (cameraId == 0 ? 1 : 0);
+        cameraId = (cameraId == BACK ? FRONT : BACK);
         openCamera();
+    }
+
+    public SparseArray<Face> getFaces() {
+        return faces;
+    }
+
+    public void setDetectFace(boolean detectFace) {
+        this.isDetectFace = detectFace;
     }
 
     private void initLooper() {
@@ -92,8 +94,17 @@ public class Camera {
         handler = new Handler(handlerThread.getLooper());
     }
 
+    private void initFaceDetection() {
+        detector = new FaceDetector.Builder(context)
+                .setTrackingEnabled(false)
+                .setProminentFaceOnly(true)
+                .setLandmarkType(FaceDetector.ALL_CLASSIFICATIONS)
+                .setMode(FaceDetector.ACCURATE_MODE)
+                .build();
+    }
+
     private void startPreview(@NonNull CameraDevice camera) {
-        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 3);
+        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
         imagePreviewReader.setOnImageAvailableListener(previewAvailableListener, handler);
 
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
@@ -164,10 +175,9 @@ public class Camera {
         }
     };
 
-
     private void detectFaces(Image image) {
         byte[] data = convertYUV420888ToNV21(image);
-        int rotation = cameraId == 0 ? Frame.ROTATION_90 : Frame.ROTATION_270;
+        int rotation = cameraId == BACK ? Frame.ROTATION_90 : Frame.ROTATION_270;
         Frame outputFrame = new Frame.Builder()
                 .setImageData(ByteBuffer.wrap(data), previewSize.getWidth(),
                         previewSize.getHeight(), ImageFormat.NV21)
@@ -187,129 +197,4 @@ public class Camera {
         buffer2.get(data, buffer0_size, buffer2_size);
         return data;
     }
-
-    public SparseArray<Face> getFaces() {
-        return faces;
-    }
-
-    public void setDetectFace(boolean detectFace) {
-        this.isDetectFace = detectFace;
-    }
-
-
-    /*private ImageReader.OnImageAvailableListener onImageAvailableListener = new ImageReader.OnImageAvailableListener() {
-        @Override
-        public void onImageAvailable(ImageReader reader) {
-            Image image = null;
-            try {
-                image = reader.acquireLatestImage();
-                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-
-                byte[] bytes = new byte[buffer.capacity()];
-                buffer.get(bytes);
-                save(bytes);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                if (image != null) {
-                    image.close();
-                }
-            }
-        }
-
-        private void save(byte[] bytes) throws IOException {
-            OutputStream output = null;
-            try {
-                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM) + "/pic.jpg");
-                output = new FileOutputStream(file);
-                output.write(bytes);
-            } finally {
-                if (null != output) {
-                    output.close();
-                }
-            }
-        }
-    };
-
-    private CameraCaptureSession.CaptureCallback captureCallback = new CameraCaptureSession.CaptureCallback() {
-        @Override
-        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-            super.onCaptureCompleted(session, request, result);
-            Toast.makeText(context, "saved successfully", Toast.LENGTH_SHORT).show();
-            startPreview(cameraDevice);
-        }
-    };*/
-
-    /*@Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-
-    }*/
-
-        /*public void takePicture() {
-        SparseIntArray ORIENTATIONS = new SparseIntArray();
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-
-        if (null == cameraDevice) return;
-
-        try {
-            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraDevice.getId());
-            Size imageSize = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(ImageFormat.JPEG)[0];
-
-            ImageReader reader = ImageReader.newInstance(imageSize.getWidth(), imageSize.getHeight(), ImageFormat.JPEG, 1);
-            List<Surface> outputSurfaces = new ArrayList<>(2);
-            outputSurfaces.add(reader.getSurface());
-            outputSurfaces.add(new Surface(textureController.getTexture()));
-
-            final CaptureRequest.Builder captureBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            captureBuilder.addTarget(reader.getSurface());
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-
-            int rotation = (((Activity) context)).getWindowManager().getDefaultDisplay().getRotation();
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-
-            reader.setOnImageAvailableListener(onImageAvailableListener, handler);
-
-            cameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
-                @Override
-                public void onConfigured(CameraCaptureSession session) {
-                    try {
-                        session.capture(captureBuilder.build(), captureCallback, handler);
-                    } catch (CameraAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                @Override
-                public void onConfigureFailed(CameraCaptureSession session) {
-                }
-            }, handler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }*/
-
-    /*public void changeCamera() {
-        cameraDevice.close();
-        cameraId = (cameraId == 0 ? 1 : 0);
-        openCamera();
-    }*/
-
-    /*@Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        openCamera();
-    }*/
-
-
-    /*@Override
-    public void onSurfaceChanged(GL10 gl, int width, int height) {
-
-    }
-
-    @Override
-    public void onDrawFrame(GL10 gl) {
-    }*/
 }
