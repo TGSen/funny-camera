@@ -27,14 +27,15 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import top.icecream.testme.camera.Camera;
+import top.icecream.testme.main.MainActivity;
 import top.icecream.testme.opengl.filter.AsciiFilterRender;
 import top.icecream.testme.opengl.filter.FilterRender;
 import top.icecream.testme.opengl.filter.GrayFilterRender;
 import top.icecream.testme.opengl.filter.LineFilterRender;
 import top.icecream.testme.opengl.filter.OriginalFilterRender;
 import top.icecream.testme.opengl.filter.ReliefFilterRender;
-import top.icecream.testme.opengl.sticker.MaskStickerRender;
 import top.icecream.testme.opengl.sticker.GlassesStickerRender;
+import top.icecream.testme.opengl.sticker.MaskStickerRender;
 import top.icecream.testme.opengl.sticker.MoustacheStickerRender;
 import top.icecream.testme.opengl.sticker.StickerRender;
 import top.icecream.testme.opengl.utils.TextureHelper;
@@ -57,10 +58,11 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private static final String TAG = "CameraRender";
 
     private final Context context;
+    private final MainActivity.Callback callback;
     private int imageId;
     private Texture texture;
     private volatile FilterRender filterRender;
-    private StickerRender stickerRender;
+    private volatile StickerRender stickerRender;
     private SurfaceTexture cameraTexture;
     private GLSurfaceView glSV;
     private List<FilterRender> filterRenderList = new LinkedList<>();
@@ -72,10 +74,13 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private int previewWidth;
     private int previewHeight;
     private Bitmap bitmap;
+    private final Object renderLock = new Object();
+    private volatile boolean isRenderDone = false;
 
-    public CameraRender(Context context, GLSurfaceView glSV) {
+    public CameraRender(Context context, GLSurfaceView glSV, MainActivity.Callback callback) {
         this.context = context;
         this.glSV = glSV;
+        this.callback = callback;
     }
 
     @Override
@@ -124,18 +129,64 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        glClear(GL_COLOR_BUFFER_BIT);
-        drawImage();
-        drawSticker();
-        cameraTexture.updateTexImage();
-        if (isTakePic) {
-            try {
-                bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
-                isTakePic = false;
-            } catch (Exception e) {
-                e.printStackTrace();
+        synchronized (renderLock) {
+            glClear(GL_COLOR_BUFFER_BIT);
+            drawImage();
+            drawSticker();
+            cameraTexture.updateTexImage();
+            if (isTakePic) {
+                while (bitmap == null) {
+                    bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
+                }
+            }
+            isRenderDone = true;
+            renderLock.notify();
+        }
+    }
+
+    @Override
+    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        synchronized (camera.getCameraLock()) {
+            if (!camera.isDetectDone()) {
+                try {
+                    camera.getCameraLock().wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            glSV.requestRender();
+            camera.setDetectNotDone();
+            synchronized (renderLock) {
+                if (!isRenderDone) {
+                    try {
+                        renderLock.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                isRenderDone = false;
             }
         }
+    }
+
+    public void changCamera() {
+        camera.changeCamera();
+    }
+
+    public void selectFilter(int position) {
+        filterRender = filterRenderList.get(position);
+    }
+
+    public void selectSticker(int position) {
+        stickerRender = stickerRenderList.get(position);
+    }
+
+    public void onResume() {
+        if (camera == null) {
+            return;
+        }
+        isTakePic = true;
+        camera.onResume();
     }
 
     public void takePicture() {
@@ -195,6 +246,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private void drawImage() {
         filterRender.useProgram();
         filterRender.bindTexture(imageId, projectionMatrix);
+        filterRender.changeCameraDirection(camera);
         texture.bindData(filterRender);
         texture.draw();
     }
@@ -210,12 +262,14 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         PointF rightEye = null;
         PointF noseBase = null;
         float[] rotationZMatrix = new float[16];
-        float[] rotationYMatrix = new float[16];
         float[] scratch = new float[16];
         float faceWidth;
         float faceHeight;
 
         Face face = faces.get(faces.keyAt(0));
+        if (face.getIsSmilingProbability() > 0.5f) {
+            callback.takePicture();
+        }
 
         int cameraId = camera.getCameraId();
         int cameraState = cameraId == Camera.BACK ? 1 : -1;
@@ -312,42 +366,5 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
             );
         }
         return result;
-    }
-
-    @Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        glSV.requestRender();
-    }
-
-    public void changCamera() {
-        camera.changeCamera();
-        filterRender.changeCameraDirection();
-    }
-
-    public void selectFilter(int position) {
-        filterRender = filterRenderList.get(position);
-    }
-
-    public void selectSticker(int position) {
-        stickerRender = stickerRenderList.get(position);
-        if (position == 0) {
-            camera.setDetectFace(false);
-        } else {
-            camera.setDetectFace(true);
-        }
-    }
-
-    public void onPause() {
-        if (camera == null) {
-            return;
-        }
-        camera.onStop();
-    }
-
-    public void onResume() {
-        if (camera == null) {
-            return;
-        }
-        camera.onResume();
     }
 }

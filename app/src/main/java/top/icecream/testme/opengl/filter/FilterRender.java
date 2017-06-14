@@ -4,6 +4,7 @@ import android.content.Context;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
+import top.icecream.testme.camera.Camera;
 import top.icecream.testme.opengl.Shader;
 
 import static android.opengl.GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
@@ -15,6 +16,7 @@ import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glTexParameteri;
 import static android.opengl.GLES20.glUniform1i;
 import static android.opengl.GLES20.glUniformMatrix4fv;
+import static top.icecream.testme.camera.Camera.BACK;
 
 /**
  * AUTHOR: 86417
@@ -27,9 +29,6 @@ public class FilterRender extends Shader {
     private final int uMatrixLocation;
     private final int aPositionLocation;
     private final int aTextureCoordinatesLocation;
-    private static final int FRONT = 0;
-    private static final int BACK = 1;
-    private int cameraDirection = FRONT;
     private float aspectRatio = 640.0f / 480.0f;
 
     public FilterRender(Context context, int vertexShader, int fragmentShader) {
@@ -93,12 +92,10 @@ public class FilterRender extends Shader {
         };
     }
 
-    public void changeCameraDirection() {
-        if (cameraDirection == FRONT) {
-            cameraDirection = BACK;
+    public void changeCameraDirection(Camera camera) {
+        if (camera.getCameraId() == BACK) {
             setBackCoordinate();
-        } else {
-            cameraDirection = FRONT;
+        } else{
             setFrontCoordinate();
         }
     }

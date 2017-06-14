@@ -23,4 +23,5 @@ public class GlassesStickerRender extends StickerRender{
         int textureId = TextureHelper.loadTexture(context, R.raw.glasses);
         bindTexture(textureId);
     }
+
 }

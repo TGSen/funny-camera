@@ -32,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.filterRV) RecyclerView filterRV;
 
     @BindView(R.id.glSV) GLSurfaceView glSV;
-    private boolean isRender = false;
     private CameraRender cameraRender;
 
     @Override
@@ -66,10 +65,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void initCameraRender() {
         glSV.setEGLContextClientVersion(2);
-        cameraRender = new CameraRender(this, glSV);
+        cameraRender = new CameraRender(this, glSV, new Callback(){
+
+            @Override
+            public void listVanish() {
+
+            }
+
+            @Override
+            public void takePicture() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MainActivity.this.takePicture();
+                    }
+                });
+            }
+        });
         glSV.setRenderer(cameraRender);
         glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-        isRender = true;
     }
 
 
@@ -100,19 +114,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        if(isRender){
-            cameraRender.onPause();
-            /*glSV.onPause();*/
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (isRender) {
-            /*glSV.onResume();*/
-            cameraRender.onResume();
-        }
     }
 
     @Override
@@ -171,7 +177,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public interface Callback {
+
         void listVanish();
+
+        void takePicture();
     }
 
     private Callback listVanish = new Callback() {
@@ -184,6 +193,11 @@ public class MainActivity extends AppCompatActivity {
                 AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
                 AnimatorHelper.listVanish(stickerRV);
             }
+        }
+
+        @Override
+        public void takePicture() {
+
         }
     };
 }

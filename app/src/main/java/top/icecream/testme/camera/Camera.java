@@ -31,6 +31,8 @@ import java.util.Arrays;
 
 public class Camera {
 
+    private static final String TAG = "Camera";
+
     public static final int RAW_WIDTH = 640;
     public static final int RAW_HEIGHT = 480;
 
@@ -48,9 +50,10 @@ public class Camera {
 
     private SurfaceTexture surfaceTexture;
     private FaceDetector detector;
-    private SparseArray<Face> faces = null;
+    private volatile SparseArray<Face> faces = null;
 
-    private volatile boolean isDetectFace = false;
+    private final Object cameraLock = new Object();
+    private volatile boolean isDetectDone = false;
 
     public Camera(Context context) {
         this.context = context;
@@ -87,8 +90,17 @@ public class Camera {
         return cameraId;
     }
 
-    public void setDetectFace(boolean detectFace) {
-        this.isDetectFace = detectFace;
+
+    public Object getCameraLock() {
+        return cameraLock;
+    }
+
+    public boolean isDetectDone() {
+        return isDetectDone;
+    }
+
+    public void setDetectNotDone() {
+        isDetectDone = false;
     }
 
     public void onStop() {
@@ -109,13 +121,14 @@ public class Camera {
         detector = new FaceDetector.Builder(context)
                 .setTrackingEnabled(false)
                 .setProminentFaceOnly(true)
-                .setLandmarkType(FaceDetector.ALL_CLASSIFICATIONS)
+                .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
                 .setMode(FaceDetector.ACCURATE_MODE)
                 .build();
     }
 
     private void startPreview(@NonNull CameraDevice camera) {
-        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
+        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 3);
         imagePreviewReader.setOnImageAvailableListener(previewAvailableListener, handler);
 
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
@@ -172,10 +185,13 @@ public class Camera {
         public void onImageAvailable(final ImageReader reader) {
             Image image = reader.acquireLatestImage();
             if (image == null) {
+                reader.close();
                 return;
             }
-            if (isDetectFace) {
+            synchronized (cameraLock) {
                 detectFaces(image);
+                isDetectDone = true;
+                cameraLock.notify();
             }
             image.close();
         }
