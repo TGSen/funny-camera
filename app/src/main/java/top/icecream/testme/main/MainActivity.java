@@ -14,6 +14,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import top.icecream.testme.R;
+import top.icecream.testme.WeChatShareUtil;
 import top.icecream.testme.info.AboutActivity;
 import top.icecream.testme.main.utils.AnimatorHelper;
 import top.icecream.testme.main.utils.PermissionHelper;
@@ -47,12 +48,12 @@ public class MainActivity extends AppCompatActivity {
         GridLayoutManager filterGridLayoutManager = new GridLayoutManager(this, 1);
         filterGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
         filterRV.setLayoutManager(filterGridLayoutManager);
-        filterRV.setAdapter(new FilterListAdapter(this, cameraRender));
+        filterRV.setAdapter(new FilterListAdapter(this, cameraRender, listVanish));
 
         GridLayoutManager stickerGridLayoutManager = new GridLayoutManager(this, 1);
         stickerGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
         stickerRV.setLayoutManager(stickerGridLayoutManager);
-        stickerRV.setAdapter(new StickerListAdapter(this, cameraRender));
+        stickerRV.setAdapter(new StickerListAdapter(this, cameraRender, listVanish));
     }
 
     private void initCamera() {
@@ -81,9 +82,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    @OnClick(R.id.filterBtn) void showFilter(){
-        AnimatorHelper.buttonVanish(filterBtn, stickerBtn, takePictureBtn);
-        AnimatorHelper.listEmerge(filterRV);
+    @OnClick(R.id.takePictureBtn) void takePicture() {
+        changeBtnStateToPicture();
+        cameraRender.takePicture();
     }
 
     @OnClick(R.id.stickerBtn) void showSticker() {
@@ -91,25 +92,17 @@ public class MainActivity extends AppCompatActivity {
         AnimatorHelper.listEmerge(stickerRV);
     }
 
-    @OnClick(R.id.glSV) void closeList(){
-        if(filterRV.getVisibility() == View.VISIBLE){
-            AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
-            AnimatorHelper.listVanish(filterRV);
-        } else if (stickerRV.getVisibility() == View.VISIBLE) {
-            AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
-            AnimatorHelper.listVanish(stickerRV);
-        }
-    }
-
-    @OnClick(R.id.takePictureBtn) void takePicture() {
-        cameraRender.takePicture();
+    @OnClick(R.id.filterBtn) void showFilter(){
+        AnimatorHelper.buttonVanish(filterBtn, stickerBtn, takePictureBtn);
+        AnimatorHelper.listEmerge(filterRV);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         if(isRender){
-            glSV.onPause();
+            cameraRender.onPause();
+            /*glSV.onPause();*/
         }
     }
 
@@ -117,7 +110,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (isRender) {
-            glSV.onResume();
+            /*glSV.onResume();*/
+            cameraRender.onResume();
         }
     }
 
@@ -127,4 +121,69 @@ public class MainActivity extends AppCompatActivity {
             initCameraRender();
         }
     }
+
+    private void changeBtnStateToPicture() {
+        stickerBtn.setBackgroundResource(R.drawable.ic_left_arrow);
+        takePictureBtn.setBackgroundResource(R.drawable.ic_download);
+        filterBtn.setBackgroundResource(R.drawable.ic_share);
+        stickerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                changeBtnStateToPreview();
+                cameraRender.onResume();
+            }
+        });
+        takePictureBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+            }
+        });
+        filterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                WeChatShareUtil.sharePhotoTo(MainActivity.this, "test", cameraRender.getBitmap());
+            }
+        });
+    }
+
+    private void changeBtnStateToPreview() {
+        stickerBtn.setBackgroundResource(R.drawable.ic_sentiment);
+        takePictureBtn.setBackgroundResource(R.drawable.ic_ring);
+        filterBtn.setBackgroundResource(R.drawable.ic_blur);
+        stickerBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showSticker();
+            }
+        });
+        takePictureBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                takePicture();
+            }
+        });
+        filterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showFilter();
+            }
+        });
+    }
+
+    public interface Callback {
+        void listVanish();
+    }
+
+    private Callback listVanish = new Callback() {
+        @Override
+        public void listVanish() {
+            if(filterRV.getVisibility() == View.VISIBLE){
+                AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
+                AnimatorHelper.listVanish(filterRV);
+            } else if (stickerRV.getVisibility() == View.VISIBLE) {
+                AnimatorHelper.buttonEmerge(filterBtn, stickerBtn, takePictureBtn);
+                AnimatorHelper.listVanish(stickerRV);
+            }
+        }
+    };
 }

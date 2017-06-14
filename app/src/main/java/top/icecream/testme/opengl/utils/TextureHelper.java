@@ -40,7 +40,7 @@ public class TextureHelper {
         glGenTextures(1, textureObjectIds, 0);
 
         if(textureObjectIds[0] == 0){
-            Log.d(TAG, "loadTexture: ");
+            Log.d(TAG, "load Texture");
             return 0;
         }
 
@@ -48,7 +48,7 @@ public class TextureHelper {
         options.inScaled = false;
         final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
         if (bitmap == null) {
-            Log.d(TAG, "loadTexture: ");
+            Log.d(TAG, "load Texture");
             glDeleteTextures(1, textureObjectIds, 0);
             return 0;
         }
@@ -64,13 +64,12 @@ public class TextureHelper {
         glEnable (GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
-        //should we use recycle?
         bitmap.recycle();
 
         glGenerateMipmap(GL_TEXTURE_2D);
 
         //unbind
-        glBindTexture(GL_TEXTURE_2D,0);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         return textureObjectIds[0];
     }
@@ -80,19 +79,10 @@ public class TextureHelper {
         GLES20.glGenTextures(1, textureObjectIds, 0);
         GLES20.glBindTexture(textureType, textureObjectIds[0]);
 
-        // Set texture default draw parameters
-        if (textureType == GLES11Ext.GL_TEXTURE_EXTERNAL_OES) {
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-            GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-
-        } else {
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_S, GL10.GL_REPEAT);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GL10.GL_TEXTURE_WRAP_T, GL10.GL_REPEAT);
-        }
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
+        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
 
         return textureObjectIds[0];
     }

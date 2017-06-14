@@ -8,7 +8,6 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
@@ -35,8 +34,8 @@ public class Camera {
     public static final int RAW_WIDTH = 640;
     public static final int RAW_HEIGHT = 480;
 
-    private static final int BACK = 0;
-    private static final int FRONT = 1;
+    public static final int BACK = 0;
+    public static final int FRONT = 1;
 
     private Context context;
     private Handler handler;
@@ -51,7 +50,7 @@ public class Camera {
     private FaceDetector detector;
     private SparseArray<Face> faces = null;
 
-    private boolean isDetectFace = false;
+    private volatile boolean isDetectFace = false;
 
     public Camera(Context context) {
         this.context = context;
@@ -84,8 +83,20 @@ public class Camera {
         return faces;
     }
 
+    public int getCameraId() {
+        return cameraId;
+    }
+
     public void setDetectFace(boolean detectFace) {
         this.isDetectFace = detectFace;
+    }
+
+    public void onStop() {
+        cameraDevice.close();
+    }
+
+    public void onResume() {
+        openCamera();
     }
 
     private void initLooper() {
@@ -144,12 +155,7 @@ public class Camera {
         @Override
         public void onConfigured(@NonNull CameraCaptureSession session) {
             try {
-                session.setRepeatingRequest(requestBuilder.build(), new CameraCaptureSession.CaptureCallback() {
-                    @Override
-                    public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                        super.onCaptureCompleted(session, request, result);
-                    }
-                }, handler);
+                session.setRepeatingRequest(requestBuilder.build(), null, handler);
             } catch (CameraAccessException e) {
                 e.printStackTrace();
             }

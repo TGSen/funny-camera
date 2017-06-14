@@ -28,11 +28,9 @@ public class ShaderHelper {
     public static int buildProgram(String vertexShaderSource, String fragmentShaderSource){
         int program;
 
-        //compile the shaders
         int vertexShader = compileVertexShader(vertexShaderSource);
         int fragmentShader = compileFragmentShader(fragmentShaderSource);
 
-        //link them into a shader program
         program = linkProgram(vertexShader, fragmentShader);
 
         return program;

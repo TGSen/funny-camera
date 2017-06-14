@@ -10,16 +10,17 @@ import top.icecream.testme.opengl.utils.TextureHelper;
  * DATE: 6/8/2017
  */
 
-public class FaceStickerRender extends StickerRender {
-    private Context context;
+public class MoustacheStickerRender extends StickerRender{
 
-    public FaceStickerRender(Context context) {
+    private final Context context;
+
+    public MoustacheStickerRender(Context context) {
         super(context);
         this.context = context;
     }
 
     public void bindTexture() {
-        int textureId = TextureHelper.loadTexture(context, R.raw.circle);
+        int textureId = TextureHelper.loadTexture(context, R.raw.moustache);
         bindTexture(textureId);
     }
 }
