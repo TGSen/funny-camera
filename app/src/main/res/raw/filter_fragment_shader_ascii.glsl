@@ -4,7 +4,7 @@ precision mediump float;
 uniform samplerExternalOES sTexture;
 varying vec2 vTextureCoordinates;
 
-vec3 iResolution = vec3(720.0,1280.0,1.0);
+vec3 iResolution = vec3(1440.0,1920.0,1.0);
 float iGlobalTime = 1.0;
 
 #define r iResolution.xy

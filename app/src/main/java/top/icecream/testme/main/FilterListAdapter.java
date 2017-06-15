@@ -22,7 +22,6 @@ public class FilterListAdapter extends ListAdapter {
         iconList.add(null);
         iconList.add(null);
         iconList.add(null);
-        iconList.add(null);
     }
 
     @Override

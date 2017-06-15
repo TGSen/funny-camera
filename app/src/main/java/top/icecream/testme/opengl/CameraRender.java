@@ -15,6 +15,7 @@ import android.util.SparseArray;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.Landmark;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,7 +32,6 @@ import top.icecream.testme.main.MainActivity;
 import top.icecream.testme.opengl.filter.AsciiFilterRender;
 import top.icecream.testme.opengl.filter.FilterRender;
 import top.icecream.testme.opengl.filter.GrayFilterRender;
-import top.icecream.testme.opengl.filter.LineFilterRender;
 import top.icecream.testme.opengl.filter.OriginalFilterRender;
 import top.icecream.testme.opengl.filter.ReliefFilterRender;
 import top.icecream.testme.opengl.sticker.GlassesStickerRender;
@@ -68,14 +68,13 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     private List<FilterRender> filterRenderList = new LinkedList<>();
     private List<StickerRender> stickerRenderList = new LinkedList<>();
 
-    private final float[] projectionMatrix = new float[16];
     private volatile Camera camera;
-    private volatile boolean isTakePic = false;
+    private final float[] projectionMatrix = new float[16];
+
+    private volatile Bitmap bitmap;
+    private volatile boolean isTakePicture = false;
     private int previewWidth;
     private int previewHeight;
-    private Bitmap bitmap;
-    private final Object renderLock = new Object();
-    private volatile boolean isRenderDone = false;
 
     public CameraRender(Context context, GLSurfaceView glSV, MainActivity.Callback callback) {
         this.context = context;
@@ -89,7 +88,6 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         filterRenderList.add(new GrayFilterRender(context));
         filterRenderList.add(new ReliefFilterRender(context));
         filterRenderList.add(new AsciiFilterRender(context));
-        filterRenderList.add(new LineFilterRender(context));
 
         stickerRenderList.add(null);
         stickerRenderList.add(new GlassesStickerRender(context));
@@ -113,9 +111,9 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
-        glViewport(0, 0, width, height);
         this.previewWidth = width;
         this.previewHeight = height;
+        glViewport(0, 0, width, height);
 
         final float aspectRatio = width > height ?
                 (float) width / (float) height:
@@ -129,44 +127,22 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        synchronized (renderLock) {
-            glClear(GL_COLOR_BUFFER_BIT);
-            drawImage();
-            drawSticker();
-            cameraTexture.updateTexImage();
-            if (isTakePic) {
-                while (bitmap == null) {
-                    bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
-                }
-            }
-            isRenderDone = true;
-            renderLock.notify();
+        glClear(GL_COLOR_BUFFER_BIT);
+        FilterRender filterRender = this.filterRender;
+        StickerRender stickerRender = this.stickerRender;
+        drawImage(filterRender);
+        drawSticker(stickerRender);
+        cameraTexture.updateTexImage();
+
+        if (isTakePicture) {
+            bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
+            isTakePicture = false;
         }
     }
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        synchronized (camera.getCameraLock()) {
-            if (!camera.isDetectDone()) {
-                try {
-                    camera.getCameraLock().wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            glSV.requestRender();
-            camera.setDetectNotDone();
-            synchronized (renderLock) {
-                if (!isRenderDone) {
-                    try {
-                        renderLock.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                isRenderDone = false;
-            }
-        }
+        glSV.requestRender();
     }
 
     public void changCamera() {
@@ -182,28 +158,32 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
     }
 
     public void onResume() {
-        if (camera == null) {
-            return;
-        }
-        isTakePic = true;
-        camera.onResume();
+        callback.openCamera();
     }
 
     public void takePicture() {
-        isTakePic = true;
-        camera.onStop();
+        isTakePicture = true;
+        callback.closeCamera();
     }
 
-    public Bitmap getBitmap() {
-        return bitmap;
+    public void savePicture() {
+        saveBitmap(bitmap);
     }
 
-    private File saveBitmap(Bitmap bitmap){
+    private void saveBitmap(Bitmap bitmap){
+        if (bitmap == null) {
+            callback.showMessage("bitmap为null,图片保存失败");
+            return;
+        }
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
-        File file = new File(Environment.getExternalStorageDirectory() + File.separator + System.currentTimeMillis() + "image.jpg");
+        File file = new File(Environment.getExternalStorageDirectory() + File.separator +"Me"+ File.separator+System.currentTimeMillis() + "image.jpg");
         try {
-            file.createNewFile();
+            boolean fileCreateSuccessful = file.createNewFile();
+            if (!fileCreateSuccessful) {
+                callback.showMessage("图片创建失败");
+                return;
+            }
             FileOutputStream fileOutputStream = new FileOutputStream(file);
             fileOutputStream.write(bytes.toByteArray());
             fileOutputStream.flush();
@@ -213,6 +193,58 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
             bitmap.recycle();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private File saveGlSurfaceView(int w, int h) {
+        File file = null;
+        try {
+            int b[]=new int[w*h];
+            int bt[]=new int[w*h];
+            IntBuffer buffer=IntBuffer.wrap(b);
+            buffer.position(0);
+            GLES20.glReadPixels(0, 0, w, h,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE, buffer);
+            for(int i=0; i<h; i++) {
+                for(int j=0; j<w; j++) {
+                    int pix=b[i*w+j];
+                    int pb=(pix>>16)&0xff;
+                    int pr=(pix<<16)&0x00ff0000;
+                    int pix1 = (pix & 0xff00ff00) | pr | pb;
+                    bt[(h-i-1)*w+j]=pix1;
+                }
+            }
+            Bitmap inBitmap;
+            inBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            inBitmap.copyPixelsFromBuffer(buffer);
+            inBitmap = Bitmap.createBitmap(bt, w, h, Bitmap.Config.ARGB_8888);
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            inBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bos);
+            byte[] bitmapData = bos.toByteArray();
+            ByteArrayInputStream fis = new ByteArrayInputStream(bitmapData);
+
+
+            String fileName = System.currentTimeMillis() + ".jpeg";
+            File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "Me"
+                    + File.separator + "image");
+            dir.mkdirs();
+
+            try {
+                file = new File(dir, fileName);
+                FileOutputStream fos = new FileOutputStream(file);
+
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = fis.read(buf)) > 0) {
+                    fos.write(buf, 0, len);
+                }
+                fis.close();
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } catch(Exception e) {
+            e.printStackTrace() ;
         }
         return file;
     }
@@ -238,26 +270,31 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
                 }
             }
         } catch (GLException e) {
+            e.printStackTrace();
             return null;
         }
         return Bitmap.createBitmap(bitmapSource, w, h, Bitmap.Config.ARGB_8888);
     }
 
-    private void drawImage() {
+    private void drawImage(FilterRender filterRender) {
         filterRender.useProgram();
         filterRender.bindTexture(imageId, projectionMatrix);
         filterRender.changeCameraDirection(camera);
-        texture.bindData(filterRender);
+        texture.bindData(this.filterRender);
         texture.draw();
     }
 
-    private void drawSticker() {
+    private void drawSticker(StickerRender stickerRender) {
+        if (stickerRender == null) {
+            return;
+        }
+
         SparseArray<Face> faces = camera.getFaces();
         if (faces == null || faces.size() == 0) {
             return;
         }
 
-        PointF faceCenter;
+        PointF faceCenter = null;
         PointF leftEye = null;
         PointF rightEye = null;
         PointF noseBase = null;
@@ -267,7 +304,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         float faceHeight;
 
         Face face = faces.get(faces.keyAt(0));
-        if (face.getIsSmilingProbability() > 0.5f) {
+        if (face.getIsSmilingProbability() > 0.7f) {
             callback.takePicture();
         }
 
@@ -287,10 +324,6 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         faceHeight = face.getHeight() / RAW_HEIGHT;
         faceCenter.x = faceCenter.x - faceWidth;
         faceCenter.y = faceCenter.y - faceHeight;
-
-        if (stickerRender == null) {
-            return;
-        }
 
         if (leftEye != null && rightEye != null && stickerRender instanceof GlassesStickerRender) {
             float centerX, centerY;
@@ -366,5 +399,17 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
             );
         }
         return result;
+    }
+
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
+    public void closeCamera() {
+        camera.close();
+    }
+
+    public void openCamera() {
+        camera.openCamera();
     }
 }

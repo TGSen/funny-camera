@@ -13,6 +13,7 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
 import android.view.Surface;
@@ -23,6 +24,8 @@ import com.google.android.gms.vision.face.FaceDetector;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * AUTHOR: 86417
@@ -52,8 +55,7 @@ public class Camera {
     private FaceDetector detector;
     private volatile SparseArray<Face> faces = null;
 
-    private final Object cameraLock = new Object();
-    private volatile boolean isDetectDone = false;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public Camera(Context context) {
         this.context = context;
@@ -90,25 +92,17 @@ public class Camera {
         return cameraId;
     }
 
-
-    public Object getCameraLock() {
-        return cameraLock;
-    }
-
-    public boolean isDetectDone() {
-        return isDetectDone;
-    }
-
-    public void setDetectNotDone() {
-        isDetectDone = false;
-    }
-
     public void onStop() {
         cameraDevice.close();
     }
 
     public void onResume() {
-        openCamera();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                openCamera();
+            }
+        });
     }
 
     private void initLooper() {
@@ -128,7 +122,7 @@ public class Camera {
     }
 
     private void startPreview(@NonNull CameraDevice camera) {
-        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 3);
+        ImageReader imagePreviewReader = ImageReader.newInstance(previewSize.getWidth(), previewSize.getHeight(), ImageFormat.YUV_420_888, 2);
         imagePreviewReader.setOnImageAvailableListener(previewAvailableListener, handler);
 
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
@@ -183,17 +177,17 @@ public class Camera {
     private final ImageReader.OnImageAvailableListener previewAvailableListener = new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(final ImageReader reader) {
-            Image image = reader.acquireLatestImage();
-            if (image == null) {
-                reader.close();
-                return;
-            }
-            synchronized (cameraLock) {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                final Image image = reader.acquireNextImage();
+                if (image == null) {
+                    return;
+                }
                 detectFaces(image);
-                isDetectDone = true;
-                cameraLock.notify();
+                image.close();
             }
-            image.close();
+        });
         }
     };
 
@@ -206,6 +200,7 @@ public class Camera {
                 .setRotation(rotation)
                 .build();
         faces = detector.detect(outputFrame);
+        Log.d(TAG, "detectFaces: face num" + faces.size());
     }
 
     private byte[] convertYUV420888ToNV21(Image imgYUV420) {
@@ -218,5 +213,9 @@ public class Camera {
         buffer0.get(data, 0, buffer0_size);
         buffer2.get(data, buffer0_size, buffer2_size);
         return data;
+    }
+
+    public void close() {
+        cameraDevice.close();
     }
 }

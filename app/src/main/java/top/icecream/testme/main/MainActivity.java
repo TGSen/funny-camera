@@ -9,6 +9,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -81,6 +82,36 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
+
+            @Override
+            public void showMessage(final String info) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, info, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void closeCamera() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraRender.closeCamera();
+                    }
+                });
+            }
+
+            @Override
+            public void openCamera() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        cameraRender.openCamera();
+                    }
+                });
+            }
         });
         glSV.setRenderer(cameraRender);
         glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -142,6 +173,9 @@ public class MainActivity extends AppCompatActivity {
         takePictureBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                cameraRender.savePicture();
+                changeBtnStateToPreview();
+                cameraRender.onResume();
             }
         });
         filterBtn.setOnClickListener(new View.OnClickListener() {
@@ -181,6 +215,12 @@ public class MainActivity extends AppCompatActivity {
         void listVanish();
 
         void takePicture();
+
+        void showMessage(String info);
+
+        void closeCamera();
+
+        void openCamera();
     }
 
     private Callback listVanish = new Callback() {
@@ -197,6 +237,21 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void takePicture() {
+
+        }
+
+        @Override
+        public void showMessage(String info) {
+
+        }
+
+        @Override
+        public void closeCamera() {
+
+        }
+
+        @Override
+        public void openCamera() {
 
         }
     };
