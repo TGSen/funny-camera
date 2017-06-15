@@ -44,80 +44,6 @@ public class MainActivity extends AppCompatActivity {
         initList();
     }
 
-    private void initList() {
-        GridLayoutManager filterGridLayoutManager = new GridLayoutManager(this, 1);
-        filterGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
-        filterRV.setLayoutManager(filterGridLayoutManager);
-        filterRV.setAdapter(new FilterListAdapter(this, cameraRender, listVanish));
-
-        GridLayoutManager stickerGridLayoutManager = new GridLayoutManager(this, 1);
-        stickerGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
-        stickerRV.setLayoutManager(stickerGridLayoutManager);
-        stickerRV.setAdapter(new StickerListAdapter(this, cameraRender, listVanish));
-    }
-
-    private void initCamera() {
-        if (!PermissionHelper.checkPermissions(this)){
-            PermissionHelper.requestPermissions(this);
-        }else{
-            initCameraRender();
-        }
-    }
-
-    private void initCameraRender() {
-        glSV.setEGLContextClientVersion(2);
-        cameraRender = new CameraRender(this, glSV, new Callback(){
-
-            @Override
-            public void listVanish() {
-
-            }
-
-            @Override
-            public void takePicture() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        MainActivity.this.takePicture();
-                    }
-                });
-            }
-
-            @Override
-            public void showMessage(final String info) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, info, Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-
-            @Override
-            public void closeCamera() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        cameraRender.closeCamera();
-                    }
-                });
-            }
-
-            @Override
-            public void openCamera() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        cameraRender.openCamera();
-                    }
-                });
-            }
-        });
-        glSV.setRenderer(cameraRender);
-        glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
-    }
-
-
     @OnClick(R.id.changeCameraBtn) void changeCamera() {
         cameraRender.changCamera();
     }
@@ -159,6 +85,69 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public interface Callback {
+
+        void listVanish();
+
+        void takePicture();
+
+        void showMessage(String info);
+    }
+
+
+    private void initCamera() {
+        if (!PermissionHelper.checkPermissions(this)){
+            PermissionHelper.requestPermissions(this);
+        }else{
+            initCameraRender();
+        }
+    }
+
+    private void initList() {
+        GridLayoutManager filterGridLayoutManager = new GridLayoutManager(this, 1);
+        filterGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
+        filterRV.setLayoutManager(filterGridLayoutManager);
+        filterRV.setAdapter(new FilterListAdapter(this, cameraRender, listVanish));
+
+        GridLayoutManager stickerGridLayoutManager = new GridLayoutManager(this, 1);
+        stickerGridLayoutManager.setOrientation(GridLayoutManager.HORIZONTAL);
+        stickerRV.setLayoutManager(stickerGridLayoutManager);
+        stickerRV.setAdapter(new StickerListAdapter(this, cameraRender, listVanish));
+    }
+
+    private void initCameraRender() {
+        glSV.setEGLContextClientVersion(2);
+        cameraRender = new CameraRender(this, glSV, new Callback(){
+
+            @Override
+            public void listVanish() {
+
+            }
+
+            @Override
+            public void takePicture() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        MainActivity.this.takePicture();
+                    }
+                });
+            }
+
+            @Override
+            public void showMessage(final String info) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, info, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+        glSV.setRenderer(cameraRender);
+        glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
+    }
+
     private void changeBtnStateToPicture() {
         stickerBtn.setBackgroundResource(R.drawable.ic_left_arrow);
         takePictureBtn.setBackgroundResource(R.drawable.ic_download);
@@ -167,21 +156,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 changeBtnStateToPreview();
-                cameraRender.onResume();
+                cameraRender.openCamera();
             }
         });
         takePictureBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cameraRender.savePicture();
                 changeBtnStateToPreview();
-                cameraRender.onResume();
+                cameraRender.savePicture();
+                cameraRender.openCamera();
             }
         });
         filterBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                WeChatShareUtil.sharePhotoTo(MainActivity.this, "test", cameraRender.getBitmap());
+                WeChatShareUtil.sharePhotoTo(MainActivity.this, cameraRender.getBitmap());
             }
         });
     }
@@ -210,19 +199,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public interface Callback {
-
-        void listVanish();
-
-        void takePicture();
-
-        void showMessage(String info);
-
-        void closeCamera();
-
-        void openCamera();
-    }
-
     private Callback listVanish = new Callback() {
         @Override
         public void listVanish() {
@@ -236,23 +212,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void takePicture() {
-
-        }
+        public void takePicture() {}
 
         @Override
-        public void showMessage(String info) {
-
-        }
-
-        @Override
-        public void closeCamera() {
-
-        }
-
-        @Override
-        public void openCamera() {
-
-        }
+        public void showMessage(String info) {}
     };
 }

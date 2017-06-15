@@ -18,8 +18,8 @@ import android.widget.Toast;
 
 public class WeChatShareUtil {
 
-    public static void sharePhotoTo(final Context context, String text, Bitmap bitmap) {
-        if (!uninstallSoftware(context, "com.tencent.mm")) {
+    public static void sharePhotoTo(final Context context, Bitmap bitmap) {
+        if (!isUninstallSoftware(context, "com.tencent.mm")) {
             ((Activity) context).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -29,8 +29,8 @@ public class WeChatShareUtil {
             return;
         }
 
-        if (bitmap == null) {
-            final String tip = "图片错误";
+        if (bitmap == null || bitmap.isRecycled()) {
+            final String tip = "bitmap为null,图片错误";
             ((Activity) context).runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -47,12 +47,12 @@ public class WeChatShareUtil {
         intent.setComponent(componentName);
         intent.setAction("android.intent.action.SEND");
         intent.setType("image/*");
-        intent.putExtra("Kdescription", text);
+        intent.putExtra("Kdescription", "");
         intent.putExtra(Intent.EXTRA_STREAM, uri);
         context.startActivity(intent);
     }
 
-    private static boolean uninstallSoftware(Context context, String packageName) {
+    private static boolean isUninstallSoftware(Context context, String packageName) {
         PackageManager packageManager = context.getPackageManager();
         try {
             PackageInfo packageInfo = packageManager.getPackageInfo(packageName, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT);

@@ -33,7 +33,7 @@
                 android:textSize="@dimen/little_title_size"
                 style="@style/InfoText"
                 android:id="@+id/appTV"
-                android:text="APP" />
+                android:text="Me"/>
 
             <ImageView
                 android:layout_margin="@dimen/text_margin"
@@ -65,20 +65,6 @@
                 app:layout_constraintLeft_toRightOf="@id/licenseIV"
                 app:layout_constraintBottom_toBottomOf="@id/licenseIV" />
 
-            <ImageView
-                android:layout_margin="@dimen/text_margin"
-                android:id="@+id/rateIV"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                app:srcCompat="@drawable/ic_star"
-                app:layout_constraintTop_toBottomOf="@id/licenseIV"/>
-
-            <TextView
-                style="@style/InfoText"
-                android:id="@+id/rateTV"
-                android:text="rate the app"
-                app:layout_constraintLeft_toRightOf="@id/rateIV"
-                app:layout_constraintBottom_toBottomOf="@id/rateIV"/>
         </android.support.constraint.ConstraintLayout>
     </android.support.v7.widget.CardView>
 
@@ -112,7 +98,7 @@
             <TextView
                 android:id="@+id/teamTV"
                 style="@style/InfoText"
-                android:text="five team"
+                android:text="W,J,S,H,W,Z"
                 app:layout_constraintLeft_toRightOf="@id/teamIV"
                 app:layout_constraintBottom_toBottomOf="@id/teamIV" />
 
@@ -127,7 +113,7 @@
             <TextView
                 style="@style/InfoText"
                 android:id="@+id/mailTV"
-                android:text="abcd@gmail.com"
+                android:text="linglongxinshi@gmail.com"
                 app:layout_constraintLeft_toRightOf="@id/mailIV"
                 app:layout_constraintBottom_toBottomOf="@id/mailIV" />
 

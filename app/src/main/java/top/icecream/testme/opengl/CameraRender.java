@@ -15,7 +15,6 @@ import android.util.SparseArray;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.Landmark;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -136,6 +135,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
         if (isTakePicture) {
             bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
+            camera.close();
             isTakePicture = false;
         }
     }
@@ -157,13 +157,12 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         stickerRender = stickerRenderList.get(position);
     }
 
-    public void onResume() {
-        callback.openCamera();
+    public void openCamera() {
+        camera.openCamera();
     }
 
     public void takePicture() {
         isTakePicture = true;
-        callback.closeCamera();
     }
 
     public void savePicture() {
@@ -172,7 +171,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     private void saveBitmap(Bitmap bitmap){
         if (bitmap == null) {
-            callback.showMessage("bitmap为null,图片保存失败");
+            callback.showMessage("图片为空");
             return;
         }
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -196,65 +195,11 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         }
     }
 
-    private File saveGlSurfaceView(int w, int h) {
-        File file = null;
-        try {
-            int b[]=new int[w*h];
-            int bt[]=new int[w*h];
-            IntBuffer buffer=IntBuffer.wrap(b);
-            buffer.position(0);
-            GLES20.glReadPixels(0, 0, w, h,GLES20.GL_RGBA,GLES20.GL_UNSIGNED_BYTE, buffer);
-            for(int i=0; i<h; i++) {
-                for(int j=0; j<w; j++) {
-                    int pix=b[i*w+j];
-                    int pb=(pix>>16)&0xff;
-                    int pr=(pix<<16)&0x00ff0000;
-                    int pix1 = (pix & 0xff00ff00) | pr | pb;
-                    bt[(h-i-1)*w+j]=pix1;
-                }
-            }
-            Bitmap inBitmap;
-            inBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-            inBitmap.copyPixelsFromBuffer(buffer);
-            inBitmap = Bitmap.createBitmap(bt, w, h, Bitmap.Config.ARGB_8888);
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            inBitmap.compress(Bitmap.CompressFormat.JPEG, 90, bos);
-            byte[] bitmapData = bos.toByteArray();
-            ByteArrayInputStream fis = new ByteArrayInputStream(bitmapData);
-
-
-            String fileName = System.currentTimeMillis() + ".jpeg";
-            File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "Me"
-                    + File.separator + "image");
-            dir.mkdirs();
-
-            try {
-                file = new File(dir, fileName);
-                FileOutputStream fos = new FileOutputStream(file);
-
-                byte[] buf = new byte[1024];
-                int len;
-                while ((len = fis.read(buf)) > 0) {
-                    fos.write(buf, 0, len);
-                }
-                fis.close();
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } catch(Exception e) {
-            e.printStackTrace() ;
-        }
-        return file;
-    }
-
     private Bitmap createBitmapFromGLSurface(int x, int y, int w, int h) {
         int bitmapBuffer[] = new int[w * h];
         int bitmapSource[] = new int[w * h];
         IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
         intBuffer.position(0);
-
         try {
             GLES20.glReadPixels(x, y, w, h, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, intBuffer);
             int offset1, offset2;
@@ -403,13 +348,5 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
     public Bitmap getBitmap() {
         return bitmap;
-    }
-
-    public void closeCamera() {
-        camera.close();
-    }
-
-    public void openCamera() {
-        camera.openCamera();
     }
 }

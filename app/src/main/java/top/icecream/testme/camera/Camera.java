@@ -13,7 +13,6 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
 import android.view.Surface;
@@ -90,19 +89,6 @@ public class Camera {
 
     public int getCameraId() {
         return cameraId;
-    }
-
-    public void onStop() {
-        cameraDevice.close();
-    }
-
-    public void onResume() {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                openCamera();
-            }
-        });
     }
 
     private void initLooper() {
@@ -200,7 +186,6 @@ public class Camera {
                 .setRotation(rotation)
                 .build();
         faces = detector.detect(outputFrame);
-        Log.d(TAG, "detectFaces: face num" + faces.size());
     }
 
     private byte[] convertYUV420888ToNV21(Image imgYUV420) {
