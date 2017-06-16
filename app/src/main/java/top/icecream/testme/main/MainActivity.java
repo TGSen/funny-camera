@@ -1,6 +1,7 @@
 package top.icecream.testme.main;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -9,6 +10,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import butterknife.BindView;
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.filterRV) RecyclerView filterRV;
 
     @BindView(R.id.glSV) GLSurfaceView glSV;
+    @BindView(R.id.imageView) ImageView imageView;
     private CameraRender cameraRender;
 
     @Override
@@ -92,6 +95,8 @@ public class MainActivity extends AppCompatActivity {
         void takePicture();
 
         void showMessage(String info);
+
+        void setImageView(Bitmap bitmap);
     }
 
 
@@ -143,6 +148,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
+
+            @Override
+            public void setImageView(final Bitmap bitmap) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        imageView.setImageBitmap(bitmap);
+                        imageView.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
         });
         glSV.setRenderer(cameraRender);
         glSV.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
@@ -155,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
         stickerBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                imageView.setVisibility(View.INVISIBLE);
                 changeBtnStateToPreview();
                 cameraRender.openCamera();
             }
@@ -162,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
         takePictureBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                imageView.setVisibility(View.INVISIBLE);
                 changeBtnStateToPreview();
                 cameraRender.savePicture();
                 cameraRender.openCamera();
@@ -216,5 +234,10 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void showMessage(String info) {}
+
+        @Override
+        public void setImageView(Bitmap bitmap) {
+
+        }
     };
 }

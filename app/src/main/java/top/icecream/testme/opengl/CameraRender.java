@@ -147,6 +147,7 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
 
         if (isTakePicture) {
             bitmap = createBitmapFromGLSurface(0, 0, previewWidth, previewHeight);
+            callback.setImageView(bitmap);
             camera.close();
             isTakePicture = false;
         }

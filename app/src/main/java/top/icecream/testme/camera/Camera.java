@@ -212,4 +212,5 @@ public class Camera {
     public void cleanFaces() {
         faces = null;
     }
+
 }
