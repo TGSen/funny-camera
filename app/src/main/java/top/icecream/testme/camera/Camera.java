@@ -54,6 +54,8 @@ public class Camera {
     private FaceDetector detector;
     private volatile SparseArray<Face> faces = null;
 
+    public final Object LOCK = new Object();
+
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public Camera(Context context) {
@@ -166,11 +168,14 @@ public class Camera {
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                final Image image = reader.acquireNextImage();
+                final Image image = reader.acquireLatestImage();
                 if (image == null) {
                     return;
                 }
-                detectFaces(image);
+                synchronized (LOCK) {
+                    detectFaces(image);
+                    LOCK.notify();
+                }
                 image.close();
             }
         });
@@ -202,5 +207,9 @@ public class Camera {
 
     public void close() {
         cameraDevice.close();
+    }
+
+    public void cleanFaces() {
+        faces = null;
     }
 }

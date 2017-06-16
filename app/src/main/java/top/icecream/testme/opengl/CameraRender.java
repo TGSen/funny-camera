@@ -130,7 +130,19 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         FilterRender filterRender = this.filterRender;
         StickerRender stickerRender = this.stickerRender;
         drawImage(filterRender);
-        drawSticker(stickerRender);
+
+        synchronized (camera.LOCK) {
+            if (camera.getFaces() == null) {
+                try {
+                    camera.LOCK.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            drawSticker(stickerRender);
+            camera.cleanFaces();
+        }
+
         cameraTexture.updateTexImage();
 
         if (isTakePicture) {
@@ -145,16 +157,16 @@ public class CameraRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFr
         glSV.requestRender();
     }
 
-    public void changCamera() {
-        camera.changeCamera();
-    }
-
     public void selectFilter(int position) {
         filterRender = filterRenderList.get(position);
     }
 
     public void selectSticker(int position) {
         stickerRender = stickerRenderList.get(position);
+    }
+
+    public void changCamera() {
+        camera.changeCamera();
     }
 
     public void openCamera() {
