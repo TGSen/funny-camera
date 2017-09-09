@@ -61,7 +61,7 @@
             <TextView
                 style="@style/InfoText"
                 android:id="@+id/licenseTV"
-                android:text="LGPL"
+                android:text="MIT"
                 app:layout_constraintLeft_toRightOf="@id/licenseIV"
                 app:layout_constraintBottom_toBottomOf="@id/licenseIV" />
 
@@ -98,7 +98,7 @@
             <TextView
                 android:id="@+id/teamTV"
                 style="@style/InfoText"
-                android:text="W,J,S,H,W,Z"
+                android:text="we"
                 app:layout_constraintLeft_toRightOf="@id/teamIV"
                 app:layout_constraintBottom_toBottomOf="@id/teamIV" />
 
@@ -113,7 +113,7 @@
             <TextView
                 style="@style/InfoText"
                 android:id="@+id/mailTV"
-                android:text="linglongxinshi@gmail.com"
+                android:text="souhup@gmail.com"
                 app:layout_constraintLeft_toRightOf="@id/mailIV"
                 app:layout_constraintBottom_toBottomOf="@id/mailIV" />
 
@@ -128,7 +128,7 @@
             <TextView
                 style="@style/InfoText"
                 android:id="@+id/webTV"
-                android:text="linglongxinshi.top"
+                android:text="souhup.top"
                 app:layout_constraintLeft_toRightOf="@id/webIV"
                 app:layout_constraintBottom_toBottomOf="@id/webIV"/>
         </android.support.constraint.ConstraintLayout>
